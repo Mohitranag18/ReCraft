@@ -1,0 +1,40 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/mohit-rana/ETHGlobal/ReCraft/contracts/contracts/ReCraft.sol": {
+      "lastModificationDate": 1760720597843,
+      "contentHash": "67e139c47f7f326fe4e18b5170fdb8b1",
+      "sourceName": "contracts/ReCraft.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "ReCraft"
+      ]
+    }
+  }
+}
