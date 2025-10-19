@@ -1,17 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Interface for ERC-20 tokens (PYUSD)
+interface IERC20 {
+    function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+}
+
 contract ReCraft {
     address public platformWallet;
     uint256 public donationCounter;
     uint256 public productCounter;
+    
+    // PYUSD Token Address (set during deployment or update)
+    // For testnet: Use PYUSD testnet address
+    // For mainnet: 0x6c3ea9036406852006290770BEdFcAbA0e23A0e8 (Ethereum)
+    address public pyusdTokenAddress;
+    
+    enum PaymentMethod { ETH, PYUSD }
     
     struct Donation {
         uint256 id;
         address institution;
         string materialType;
         uint256 quantity;
-        string status; // Available, Accepted, Crafted, Sold
+        string status;
         address ngo;
         uint256 timestamp;
     }
@@ -21,11 +36,13 @@ contract ReCraft {
         uint256 donationId;
         string productName;
         string productType;
-        uint256 price; // Price in wei (or PYUSD smallest unit)
+        uint256 priceInWei;        // Price in ETH (wei)
+        uint256 priceInPYUSD;      // Price in PYUSD (6 decimals)
         address ngo;
         address artisan;
         address institution;
         bool sold;
+        PaymentMethod paymentMethod;
         uint256 timestamp;
     }
     
@@ -52,7 +69,8 @@ contract ReCraft {
         uint256 indexed productId,
         uint256 indexed donationId,
         string productName,
-        uint256 price,
+        uint256 priceInWei,
+        uint256 priceInPYUSD,
         address ngo,
         uint256 timestamp
     );
@@ -61,6 +79,7 @@ contract ReCraft {
         uint256 indexed productId,
         address indexed buyer,
         uint256 price,
+        PaymentMethod paymentMethod,
         uint256 timestamp
     );
     
@@ -71,13 +90,24 @@ contract ReCraft {
         address institution,
         uint256 institutionAmount,
         uint256 platformAmount,
+        PaymentMethod paymentMethod,
         uint256 timestamp
     );
     
-    constructor(address _platformWallet) {
+    event PYUSDAddressUpdated(address indexed newAddress);
+    
+    constructor(address _platformWallet, address _pyusdTokenAddress) {
         platformWallet = _platformWallet;
+        pyusdTokenAddress = _pyusdTokenAddress;
         donationCounter = 0;
         productCounter = 0;
+    }
+    
+    // Update PYUSD token address (only platform wallet)
+    function updatePYUSDAddress(address _newPyusdAddress) external {
+        require(msg.sender == platformWallet, "Only platform can update");
+        pyusdTokenAddress = _newPyusdAddress;
+        emit PYUSDAddressUpdated(_newPyusdAddress);
     }
     
     function createDonation(
@@ -126,7 +156,8 @@ contract ReCraft {
         uint256 _donationId,
         string memory _productName,
         string memory _productType,
-        uint256 _price,
+        uint256 _priceInWei,
+        uint256 _priceInPYUSD,
         address _artisan
     ) public returns (uint256) {
         require(_donationId > 0 && _donationId <= donationCounter, "Invalid donation ID");
@@ -143,11 +174,13 @@ contract ReCraft {
             donationId: _donationId,
             productName: _productName,
             productType: _productType,
-            price: _price,
+            priceInWei: _priceInWei,
+            priceInPYUSD: _priceInPYUSD,
             ngo: msg.sender,
             artisan: _artisan,
             institution: donations[_donationId].institution,
             sold: false,
+            paymentMethod: PaymentMethod.ETH,
             timestamp: block.timestamp
         });
         
@@ -158,7 +191,8 @@ contract ReCraft {
             productCounter,
             _donationId,
             _productName,
-            _price,
+            _priceInWei,
+            _priceInPYUSD,
             msg.sender,
             block.timestamp
         );
@@ -166,13 +200,15 @@ contract ReCraft {
         return productCounter;
     }
     
-    function purchaseProduct(uint256 _productId) public payable {
+    // Purchase with ETH
+    function purchaseProductWithETH(uint256 _productId) public payable {
         require(_productId > 0 && _productId <= productCounter, "Invalid product ID");
         require(!products[_productId].sold, "Product already sold");
-        require(msg.value >= products[_productId].price, "Insufficient payment");
+        require(msg.value >= products[_productId].priceInWei, "Insufficient payment");
         
         Product storage product = products[_productId];
         product.sold = true;
+        product.paymentMethod = PaymentMethod.ETH;
         
         donations[product.donationId].status = "Sold";
         
@@ -180,25 +216,52 @@ contract ReCraft {
             _productId,
             msg.sender,
             msg.value,
+            PaymentMethod.ETH,
             block.timestamp
         );
         
-        distributeRevenue(_productId, msg.value);
+        distributeRevenueETH(_productId, msg.value);
     }
     
-    function distributeRevenue(uint256 _productId, uint256 _amount) internal {
+    // Purchase with PYUSD
+    function purchaseProductWithPYUSD(uint256 _productId) public {
+        require(_productId > 0 && _productId <= productCounter, "Invalid product ID");
+        require(!products[_productId].sold, "Product already sold");
+        require(pyusdTokenAddress != address(0), "PYUSD not configured");
+        
+        Product storage product = products[_productId];
+        uint256 price = product.priceInPYUSD;
+        
+        IERC20 pyusd = IERC20(pyusdTokenAddress);
+        
+        // Transfer PYUSD from buyer to contract
+        require(
+            pyusd.transferFrom(msg.sender, address(this), price),
+            "PYUSD transfer failed"
+        );
+        
+        product.sold = true;
+        product.paymentMethod = PaymentMethod.PYUSD;
+        donations[product.donationId].status = "Sold";
+        
+        emit ProductPurchased(
+            _productId,
+            msg.sender,
+            price,
+            PaymentMethod.PYUSD,
+            block.timestamp
+        );
+        
+        distributeRevenuePYUSD(_productId, price);
+    }
+    
+    function distributeRevenueETH(uint256 _productId, uint256 _amount) internal {
         Product storage product = products[_productId];
         
-        // 70% to NGO/Artisan (can be split further off-chain)
         uint256 ngoAmount = (_amount * 70) / 100;
-        
-        // 20% to Institution
         uint256 institutionAmount = (_amount * 20) / 100;
-        
-        // 10% to Platform
         uint256 platformAmount = (_amount * 10) / 100;
         
-        // Transfer funds
         payable(product.ngo).transfer(ngoAmount);
         payable(product.institution).transfer(institutionAmount);
         payable(platformWallet).transfer(platformAmount);
@@ -210,6 +273,32 @@ contract ReCraft {
             product.institution,
             institutionAmount,
             platformAmount,
+            PaymentMethod.ETH,
+            block.timestamp
+        );
+    }
+    
+    function distributeRevenuePYUSD(uint256 _productId, uint256 _amount) internal {
+        Product storage product = products[_productId];
+        
+        uint256 ngoAmount = (_amount * 70) / 100;
+        uint256 institutionAmount = (_amount * 20) / 100;
+        uint256 platformAmount = (_amount * 10) / 100;
+        
+        IERC20 pyusd = IERC20(pyusdTokenAddress);
+        
+        require(pyusd.transfer(product.ngo, ngoAmount), "NGO transfer failed");
+        require(pyusd.transfer(product.institution, institutionAmount), "Institution transfer failed");
+        require(pyusd.transfer(platformWallet, platformAmount), "Platform transfer failed");
+        
+        emit RevenueDistributed(
+            _productId,
+            product.ngo,
+            ngoAmount,
+            product.institution,
+            institutionAmount,
+            platformAmount,
+            PaymentMethod.PYUSD,
             block.timestamp
         );
     }
@@ -233,7 +322,6 @@ contract ReCraft {
     function getAvailableDonations() public view returns (uint256[] memory) {
         uint256 count = 0;
         
-        // Count available donations
         for (uint256 i = 1; i <= donationCounter; i++) {
             if (keccak256(bytes(donations[i].status)) == keccak256(bytes("Available"))) {
                 count++;

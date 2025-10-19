@@ -15,7 +15,8 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
     productName: '',
     productType: 'decor',
     description: '',
-    price: '',
+    priceETH: '',
+    pricePYUSD: '',
     artisanName: '',
     artisanWallet: ''
   });
@@ -66,13 +67,11 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      // Accept donation on blockchain
       const tx = await contract.acceptDonation(donation.blockchainId);
       console.log('Transaction sent:', tx.hash);
       const receipt = await tx.wait();
       console.log('Transaction confirmed:', receipt);
 
-      // Update backend
       await axios.patch(
         `http://localhost:5000/api/ngos/donations/${donation._id}/accept`,
         {
@@ -95,6 +94,23 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
     }
   };
 
+  // Auto-calculate PYUSD price based on ETH price (1 ETH ≈ $2000)
+  const handleETHPriceChange = (ethPrice) => {
+    setProductForm({
+      ...productForm,
+      priceETH: ethPrice,
+      pricePYUSD: ethPrice ? (parseFloat(ethPrice) * 2000).toFixed(2) : ''
+    });
+  };
+
+  const handlePYUSDPriceChange = (pyusdPrice) => {
+    setProductForm({
+      ...productForm,
+      pricePYUSD: pyusdPrice,
+      priceETH: pyusdPrice ? (parseFloat(pyusdPrice) / 2000).toFixed(6) : ''
+    });
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,15 +125,25 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      // Convert price to wei
-      const priceInWei = ethers.parseEther(productForm.price);
+      // Convert prices
+      const priceInWei = ethers.parseEther(productForm.priceETH);
+      
+      // CRITICAL: PYUSD has 6 decimals, store as-is (already in USD)
+      const priceInPYUSD = ethers.parseUnits(productForm.pricePYUSD, 6);
+      
+      console.log('Creating product:');
+      console.log('- ETH price:', productForm.priceETH, 'ETH');
+      console.log('- PYUSD price:', productForm.pricePYUSD, 'PYUSD');
+      console.log('- Price in Wei:', priceInWei.toString());
+      console.log('- Price in PYUSD units:', priceInPYUSD.toString());
 
-      // Create product on blockchain
+      // Create product on blockchain with both prices
       const tx = await contract.createProduct(
         selectedDonation.blockchainId,
         productForm.productName,
         productForm.productType,
         priceInWei,
+        priceInPYUSD,
         productForm.artisanWallet || account
       );
 
@@ -150,7 +176,8 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
           productName: productForm.productName,
           productType: productForm.productType,
           description: productForm.description,
-          price: parseFloat(productForm.price),
+          price: parseFloat(productForm.priceETH),
+          pricePYUSD: parseFloat(productForm.pricePYUSD),
           artisanWallet: productForm.artisanWallet || account,
           artisanName: productForm.artisanName,
           transactionHash: receipt.hash,
@@ -167,7 +194,8 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
         productName: '',
         productType: 'decor',
         description: '',
-        price: '',
+        priceETH: '',
+        pricePYUSD: '',
         artisanName: '',
         artisanWallet: ''
       });
@@ -186,6 +214,17 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">NGO Dashboard</h1>
           <p className="text-gray-600">Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
+          <div className="mt-2 flex gap-2">
+            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+              💳 PYUSD Enabled
+            </span>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+              🌉 Cross-chain Ready
+            </span>
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              🔍 Blockscout Verified
+            </span>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -287,7 +326,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
           </div>
         </div>
 
-        {/* Product Creation Modal */}
+        {/* Product Creation Modal with PYUSD Support */}
         {showProductForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-screen overflow-y-auto">
@@ -327,19 +366,41 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (in ETH/PYUSD)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                {/* Dual Pricing: ETH and PYUSD */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price in ETH
+                    </label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={productForm.priceETH}
+                      onChange={(e) => handleETHPriceChange(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.01"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price in PYUSD
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={productForm.pricePYUSD}
+                      onChange={(e) => handlePYUSDPriceChange(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="20.00"
+                      required
+                    />
+                  </div>
                 </div>
+
+                <p className="text-xs text-gray-500">
+                  💡 Prices are automatically synchronized. 1 ETH ≈ $2000 USD ≈ 2000 PYUSD
+                </p>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

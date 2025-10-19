@@ -1,18 +1,45 @@
-const BlockchainExplorerLink = ({ transactionHash, label = 'View Transaction', network = 'localhost' }) => {
+const BlockchainExplorerLink = ({ transactionHash, label = 'View Transaction', network, type = 'tx' }) => {
+  // If network not provided, read from environment variable
+  const currentNetwork = network || import.meta.env.VITE_NETWORK || 'localhost';
+  
   const getExplorerUrl = () => {
-    switch (network.toLowerCase()) {
+    const blockscoutUrl = import.meta.env.VITE_BLOCKSCOUT_URL || 'http://localhost:4000';
+    const useBlockscout = import.meta.env.VITE_USE_BLOCKSCOUT === 'true';
+    
+    switch (currentNetwork.toLowerCase()) {
       case 'sepolia':
+        // Use Blockscout for Sepolia if available, otherwise Etherscan
+        if (useBlockscout) {
+          return `${blockscoutUrl}/${type}/${transactionHash}`;
+        }
         return `https://sepolia.etherscan.io/tx/${transactionHash}`;
+        
       case 'polygon':
+        // Blockscout for Polygon
+        if (useBlockscout) {
+          return `https://polygon.blockscout.com/${type}/${transactionHash}`;
+        }
         return `https://polygonscan.com/tx/${transactionHash}`;
+        
       case 'mainnet':
       case 'ethereum':
+        // Use Etherscan for mainnet (most users familiar with it)
         return `https://etherscan.io/tx/${transactionHash}`;
+        
+      case 'arbitrum':
+        return `https://arbiscan.io/tx/${transactionHash}`;
+        
+      case 'optimism':
+        return `https://optimistic.etherscan.io/tx/${transactionHash}`;
+        
+      case 'base':
+        return `https://basescan.org/tx/${transactionHash}`;
+        
       case 'localhost':
       case 'hardhat':
       default:
-        // Mock Blockscout instance for local development
-        return `http://localhost:4000/tx/${transactionHash}`;
+        // Local Blockscout instance for development
+        return `${blockscoutUrl}/${type}/${transactionHash}`;
     }
   };
 

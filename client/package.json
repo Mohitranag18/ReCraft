@@ -23,5 +23,9 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "vite": "^4.4.5"
+  },
+  "comments": {
+    "avail-nexus": "Uncomment below when ready to integrate Avail Nexus SDK",
+    "installation": "npm install @availproject/nexus-sdk"
   }
 }
