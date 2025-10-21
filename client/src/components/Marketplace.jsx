@@ -1,8 +1,16 @@
+/**
+ * Marketplace Component - Integrated with Avail Nexus SDK
+ * File: client/src/components/Marketplace.jsx
+ */
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
 import ProductCard from './ProductCard';
-import { initializeAvailNexus, bridgeTokens, SUPPORTED_CHAINS } from '../utils/availBridge';
+import AvailBridgeWidget from './AvailBridgeWidget';
+import { useNexus } from '../providers/NexusProvider';
+import { useAccount } from 'wagmi';
+import { ConnectKitButton } from 'connectkit';
 
 const Marketplace = ({ contractAddress, contractABI }) => {
   const [products, setProducts] = useState([]);
@@ -14,50 +22,20 @@ const Marketplace = ({ contractAddress, contractABI }) => {
     minPrice: '',
     maxPrice: ''
   });
-  const [account, setAccount] = useState('');
-  const [showBridgeModal, setShowBridgeModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('ETH'); // 'ETH' or 'PYUSD'
-  const [bridgeParams, setBridgeParams] = useState({
-    sourceChain: null,
-    targetChain: null
-  });
+
+  // Wagmi hooks for wallet connection
+  const { address: account, isConnected } = useAccount();
+  
+  // Nexus SDK status
+  const { isInitialized: nexusReady, nexusSdk } = useNexus();
 
   useEffect(() => {
     fetchProducts();
-    checkWalletConnection();
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [filters, products]);
-
-  const checkWalletConnection = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
-      }
-    }
-  };
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      alert('Please install MetaMask!');
-      return;
-    }
-
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setAccount(accounts[0]);
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-    }
-  };
 
   const fetchProducts = async () => {
     try {
@@ -111,22 +89,34 @@ const Marketplace = ({ contractAddress, contractABI }) => {
 
       const priceInWei = ethers.parseEther(product.price.toString());
 
-      console.log('Purchasing with ETH...');
+      console.log('💳 Purchasing with ETH...');
+      console.log('Product:', product.productName);
+      console.log('Price:', product.price, 'ETH');
+      
       const tx = await contract.purchaseProductWithETH(product.blockchainId, {
         value: priceInWei
       });
 
-      console.log('Transaction sent:', tx.hash);
+      console.log('📤 Transaction sent:', tx.hash);
+      alert('Transaction sent! Waiting for confirmation...');
+      
       const receipt = await tx.wait();
-      console.log('Transaction confirmed:', receipt);
+      console.log('✅ Transaction confirmed:', receipt);
 
       await updateBackendAfterPurchase(product, receipt, 'ETH');
 
-      alert('Product purchased successfully with ETH!');
+      alert('🎉 Product purchased successfully with ETH!');
       fetchProducts();
     } catch (error) {
-      console.error('Error purchasing with ETH:', error);
-      alert('Failed to purchase product: ' + error.message);
+      console.error('❌ Error purchasing with ETH:', error);
+      
+      if (error.code === 'ACTION_REJECTED') {
+        alert('Transaction was rejected by user.');
+      } else if (error.message.includes('insufficient funds')) {
+        alert('Insufficient ETH balance for purchase and gas fees.');
+      } else {
+        alert('Failed to purchase product: ' + error.message);
+      }
     }
   };
 
@@ -140,7 +130,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
-      // Get PYUSD token address from environment or contract
       const pyusdAddress = import.meta.env.VITE_PYUSD_TOKEN_ADDRESS;
       
       if (!pyusdAddress || pyusdAddress === '0x0000000000000000000000000000000000000000') {
@@ -148,17 +137,17 @@ const Marketplace = ({ contractAddress, contractABI }) => {
         return;
       }
 
-      // CRITICAL FIX: PYUSD has 6 decimals, not 18!
-      // If product.price is in ETH (e.g., 0.005), we need to convert to USD
-      // Assuming 1 ETH = 2000 USD
-      const priceInUSD = product.price * 2000; // Convert ETH price to USD
-      const priceInPYUSD = ethers.parseUnits(priceInUSD.toString(), 6); // 6 decimals for PYUSD
+      // PYUSD has 6 decimals (not 18 like ETH!)
+      // Convert ETH price to USD (assuming 1 ETH ≈ $2000 USD)
+      const priceInUSD = product.price * 2000;
+      const priceInPYUSD = ethers.parseUnits(priceInUSD.toString(), 6);
       
+      console.log('💵 Purchasing with PYUSD...');
       console.log('Product ETH price:', product.price);
       console.log('Product USD price:', priceInUSD);
-      console.log('PYUSD amount (raw):', priceInPYUSD.toString());
+      console.log('PYUSD amount:', priceInPYUSD.toString());
 
-      // ERC-20 ABI for approve and transfer
+      // ERC-20 ABI for approve and balance check
       const erc20ABI = [
         'function approve(address spender, uint256 amount) public returns (bool)',
         'function allowance(address owner, address spender) public view returns (uint256)',
@@ -174,44 +163,43 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       console.log('Your PYUSD balance:', balanceFormatted);
       
       if (balance < priceInPYUSD) {
-        alert(`Insufficient PYUSD balance. You have ${balanceFormatted} PYUSD but need ${priceInUSD} PYUSD`);
+        alert(`Insufficient PYUSD balance.\n\nYou have: ${balanceFormatted} PYUSD\nYou need: ${priceInUSD} PYUSD`);
         return;
       }
 
-      // Approve contract to spend PYUSD
-      console.log('Approving PYUSD spend...');
+      // Step 1: Approve PYUSD spend
+      console.log('🔐 Approving PYUSD spend...');
       const approveTx = await pyusdContract.approve(contractAddress, priceInPYUSD);
       
-      console.log('Approval transaction sent:', approveTx.hash);
-      alert('Approving PYUSD... Please wait for confirmation.');
+      console.log('📤 Approval transaction sent:', approveTx.hash);
+      alert('Step 1/2: Approving PYUSD... Please wait for confirmation.');
       
       await approveTx.wait();
-      console.log('PYUSD approved');
-      alert('PYUSD approved! Now purchasing product...');
+      console.log('✅ PYUSD approved');
+      alert('Step 2/2: PYUSD approved! Now purchasing product...');
 
-      // Purchase with PYUSD
+      // Step 2: Purchase with PYUSD
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
-      console.log('Purchasing with PYUSD...');
+      console.log('🛒 Executing purchase...');
       const tx = await contract.purchaseProductWithPYUSD(product.blockchainId);
 
-      console.log('Transaction sent:', tx.hash);
-      alert('Transaction sent! Waiting for confirmation...');
+      console.log('📤 Purchase transaction sent:', tx.hash);
+      alert('Purchase transaction sent! Waiting for confirmation...');
       
       const receipt = await tx.wait();
-      console.log('Transaction confirmed:', receipt);
+      console.log('✅ Transaction confirmed:', receipt);
 
       await updateBackendAfterPurchase(product, receipt, 'PYUSD');
 
-      alert('Product purchased successfully with PYUSD!');
+      alert('🎉 Product purchased successfully with PYUSD!');
       fetchProducts();
     } catch (error) {
-      console.error('Error purchasing with PYUSD:', error);
+      console.error('❌ Error purchasing with PYUSD:', error);
       
-      // Better error messages
       if (error.code === 'ACTION_REJECTED') {
         alert('Transaction was rejected by user.');
       } else if (error.message.includes('rate limited')) {
-        alert('RPC rate limit reached. Please wait a moment and try again, or switch to a different RPC provider.');
+        alert('RPC rate limit reached. Please wait a moment and try again.');
       } else if (error.message.includes('insufficient funds')) {
         alert('Insufficient funds for gas fees. Make sure you have enough SepoliaETH.');
       } else {
@@ -221,57 +209,35 @@ const Marketplace = ({ contractAddress, contractABI }) => {
   };
 
   const updateBackendAfterPurchase = async (product, receipt, method) => {
-    const ngoShare = (product.price * 0.7).toFixed(4);
-    const institutionShare = (product.price * 0.2).toFixed(4);
-    const platformShare = (product.price * 0.1).toFixed(4);
-
-    await axios.patch(`http://localhost:5000/api/products/${product._id}/purchase`, {
-      buyerWallet: account,
-      transactionHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
-      revenue: {
-        ngoShare: parseFloat(ngoShare),
-        institutionShare: parseFloat(institutionShare),
-        platformShare: parseFloat(platformShare),
-        total: product.price
-      },
-      paymentMethod: method
-    });
-  };
-
-  const openBridgeModal = (product) => {
-    setSelectedProduct(product);
-    setShowBridgeModal(true);
-  };
-
-  const handleBridge = async () => {
-    if (!bridgeParams.sourceChain || !bridgeParams.targetChain) {
-      alert('Please select both source and target chains');
-      return;
-    }
-
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const nexus = await initializeAvailNexus(provider);
+      const ngoShare = (product.price * 0.7).toFixed(4);
+      const institutionShare = (product.price * 0.2).toFixed(4);
+      const platformShare = (product.price * 0.1).toFixed(4);
 
-      const pyusdAddress = process.env.VITE_PYUSD_TOKEN_ADDRESS;
-      const amount = ethers.parseUnits(selectedProduct.price.toString(), 6);
-
-      console.log('Bridging tokens...');
-      const result = await bridgeTokens(nexus, {
-        sourceChain: bridgeParams.sourceChain,
-        targetChain: bridgeParams.targetChain,
-        tokenAddress: pyusdAddress,
-        amount: amount.toString(),
-        recipientAddress: account
+      await axios.patch(`http://localhost:5000/api/products/${product._id}/purchase`, {
+        buyerWallet: account,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        revenue: {
+          ngoShare: parseFloat(ngoShare),
+          institutionShare: parseFloat(institutionShare),
+          platformShare: parseFloat(platformShare),
+          total: product.price
+        },
+        paymentMethod: method
       });
 
-      alert(`Bridge initiated! Transaction: ${result.txHash}\nEstimated time: ${result.estimatedTime}`);
-      setShowBridgeModal(false);
+      console.log('✅ Backend updated after purchase');
     } catch (error) {
-      console.error('Bridge error:', error);
-      alert('Failed to bridge tokens: ' + error.message);
+      console.error('⚠️ Failed to update backend:', error);
+      // Don't fail the whole purchase if backend update fails
     }
+  };
+
+  const handleBridgeComplete = async (bridgeResult) => {
+    console.log('🌉 Bridge completed:', bridgeResult);
+    alert('✅ Bridge successful! Your funds are now available on Ethereum Sepolia. You can now make your purchase.');
+    // Optionally refresh balances or update UI
   };
 
   return (
@@ -283,21 +249,30 @@ const Marketplace = ({ contractAddress, contractABI }) => {
           <p className="text-lg opacity-90 mb-2">
             Discover sustainable home décor crafted from recycled materials
           </p>
-          <p className="text-sm opacity-75">
+          <p className="text-sm opacity-75 mb-4">
             💳 Pay with ETH or PYUSD  •  🌉 Cross-chain via Avail Nexus  •  🔍 Verified on Blockscout
           </p>
-          {!account ? (
-            <button
-              onClick={connectWallet}
-              className="mt-4 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
-            >
-              Connect Wallet
-            </button>
-          ) : (
-            <p className="mt-4 text-sm opacity-90">
-              Connected: {account.slice(0, 6)}...{account.slice(-4)}
-            </p>
-          )}
+          
+          {/* Wallet Connection */}
+          <div className="flex items-center gap-4 mt-4">
+            <ConnectKitButton />
+            
+            {isConnected && (
+              <div className="flex items-center gap-2">
+                {nexusReady ? (
+                  <span className="text-sm bg-green-500 bg-opacity-20 border border-green-300 px-3 py-1 rounded-lg flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    Nexus Ready
+                  </span>
+                ) : (
+                  <span className="text-sm bg-yellow-500 bg-opacity-20 border border-yellow-300 px-3 py-1 rounded-lg flex items-center gap-2">
+                    <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                    Initializing Nexus...
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -310,13 +285,13 @@ const Marketplace = ({ contractAddress, contractABI }) => {
               placeholder="Search products..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Types</option>
               <option value="decor">Décor</option>
@@ -331,19 +306,19 @@ const Marketplace = ({ contractAddress, contractABI }) => {
 
             <input
               type="number"
-              placeholder="Min Price"
+              placeholder="Min Price (ETH)"
               value={filters.minPrice}
               onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               step="0.001"
             />
 
             <input
               type="number"
-              placeholder="Max Price"
+              placeholder="Max Price (ETH)"
               value={filters.maxPrice}
               onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               step="0.001"
             />
           </div>
@@ -354,13 +329,16 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-gray-600">Loading products...</p>
+            </div>
           </div>
         ) : (
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">
-                {filteredProducts.length} Products Available
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'} Available
               </h2>
             </div>
 
@@ -371,8 +349,10 @@ const Marketplace = ({ contractAddress, contractABI }) => {
                   product={product}
                   onPurchaseETH={handlePurchaseWithETH}
                   onPurchasePYUSD={handlePurchaseWithPYUSD}
-                  onBridge={openBridgeModal}
+                  onBridgeComplete={handleBridgeComplete}
                   userWallet={account}
+                  isWalletConnected={isConnected}
+                  nexusReady={nexusReady}
                 />
               ))}
             </div>
@@ -393,98 +373,12 @@ const Marketplace = ({ contractAddress, contractABI }) => {
                   />
                 </svg>
                 <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-                <p className="mt-2 text-gray-500">Try adjusting your filters</p>
+                <p className="mt-2 text-gray-500">Try adjusting your filters or search terms</p>
               </div>
             )}
           </>
         )}
       </div>
-
-      {/* Bridge Modal */}
-      {showBridgeModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold">Bridge Tokens</h3>
-              <button
-                onClick={() => setShowBridgeModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-gray-600 mb-4">
-              Bridge PYUSD to purchase {selectedProduct.productName}
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Source Chain
-                </label>
-                <select
-                  onChange={(e) => {
-                    const chain = Object.values(SUPPORTED_CHAINS).find(
-                      c => c.chainId === parseInt(e.target.value)
-                    );
-                    setBridgeParams({ ...bridgeParams, sourceChain: chain });
-                  }}
-                  className="w-full px-4 py-2 border rounded-lg"
-                >
-                  <option value="">Select chain</option>
-                  {Object.values(SUPPORTED_CHAINS).map(chain => (
-                    <option key={chain.chainId} value={chain.chainId}>
-                      {chain.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Chain
-                </label>
-                <select
-                  onChange={(e) => {
-                    const chain = Object.values(SUPPORTED_CHAINS).find(
-                      c => c.chainId === parseInt(e.target.value)
-                    );
-                    setBridgeParams({ ...bridgeParams, targetChain: chain });
-                  }}
-                  className="w-full px-4 py-2 border rounded-lg"
-                >
-                  <option value="">Select chain</option>
-                  {Object.values(SUPPORTED_CHAINS).map(chain => (
-                    <option key={chain.chainId} value={chain.chainId}>
-                      {chain.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Amount:</strong> {selectedProduct.price} PYUSD
-                </p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <strong>Est. Time:</strong> 5-10 minutes
-                </p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <strong>Bridge Fee:</strong> ~0.001 ETH
-                </p>
-              </div>
-
-              <button
-                onClick={handleBridge}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-              >
-                Bridge via Avail Nexus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

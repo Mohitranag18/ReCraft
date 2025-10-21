@@ -1,7 +1,21 @@
+/**
+ * ProductCard Component with Avail Nexus Bridge Integration
+ * File: client/src/components/ProductCard.jsx
+ */
+
 import { useState } from 'react';
 import BlockchainExplorerLink from './BlockchainExplorerLink';
+import AvailBridgeWidget from './AvailBridgeWidget';
 
-const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWallet }) => {
+const ProductCard = ({ 
+  product, 
+  onPurchaseETH, 
+  onPurchasePYUSD, 
+  onBridgeComplete,
+  userWallet,
+  isWalletConnected,
+  nexusReady
+}) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
 
@@ -114,7 +128,7 @@ const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWa
       {/* Payment Options Modal */}
       {showPaymentOptions && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold">Choose Payment Method</h3>
               <button
@@ -141,7 +155,7 @@ const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWa
                 <div className="flex items-center justify-between">
                   <div className="text-left">
                     <p className="font-bold text-lg">Pay with ETH</p>
-                    <p className="text-sm opacity-90">{product.price} ETH</p>
+                    <p className="text-sm opacity-90">{product.price} ETH on Ethereum Sepolia</p>
                   </div>
                   <div className="text-3xl">⟠</div>
                 </div>
@@ -158,30 +172,34 @@ const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWa
                 <div className="flex items-center justify-between">
                   <div className="text-left">
                     <p className="font-bold text-lg">Pay with PYUSD</p>
-                    <p className="text-sm opacity-90">≈ ${(product.price * 2000).toFixed(2)}</p>
+                    <p className="text-sm opacity-90">≈ ${(product.price * 2000).toFixed(2)} PYUSD</p>
                     <p className="text-xs opacity-75 mt-1">PayPal USD Stablecoin</p>
                   </div>
                   <div className="text-3xl">💵</div>
                 </div>
               </button>
 
-              {/* Bridge Option */}
-              <button
-                onClick={() => {
-                  onBridge(product);
-                  setShowPaymentOptions(false);
-                }}
-                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white p-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <p className="font-bold text-lg">Bridge & Pay</p>
-                    <p className="text-sm opacity-90">Cross-chain payment</p>
-                    <p className="text-xs opacity-75 mt-1">via Avail Nexus</p>
-                  </div>
-                  <div className="text-3xl">🌉</div>
-                </div>
-              </button>
+              {/* Avail Nexus Bridge Widget */}
+              <div className="border-t pt-3">
+                <p className="text-sm text-gray-600 mb-3">
+                  Or bridge tokens from another chain:
+                </p>
+                <AvailBridgeWidget 
+                  product={product}
+                  onBridgeComplete={(result) => {
+                    console.log('Bridge completed:', result);
+                    setShowPaymentOptions(false);
+                    if (onBridgeComplete) {
+                      onBridgeComplete(result);
+                    }
+                  }}
+                />
+                {!nexusReady && (
+                  <p className="text-xs text-orange-600 mt-2 text-center">
+                    ⚠️ Nexus SDK is initializing...
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -323,7 +341,7 @@ const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWa
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800">Ethereum (ETH)</p>
-                    <p className="text-xs text-gray-600">Native blockchain currency</p>
+                    <p className="text-xs text-gray-600">Native blockchain currency on Sepolia</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -341,7 +359,9 @@ const ProductCard = ({ product, onPurchaseETH, onPurchasePYUSD, onBridge, userWa
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800">Cross-chain via Avail Nexus</p>
-                    <p className="text-xs text-gray-600">Bridge from any supported chain</p>
+                    <p className="text-xs text-gray-600">
+                      Bridge from Optimism, Arbitrum, or Base Sepolia
+                    </p>
                   </div>
                 </div>
               </div>
