@@ -1,17 +1,20 @@
 /**
- * ProductCard Component with Avail Nexus Bridge Integration
+ * ProductCard Component with Cross-chain Purchase via Bridge Execute
  * File: client/src/components/ProductCard.jsx
  */
 
 import { useState } from 'react';
 import BlockchainExplorerLink from './BlockchainExplorerLink';
+import CrossChainPurchaseWidget from './CrossChainPurchaseWidget'; //for bridge and execute feature
 import AvailBridgeWidget from './AvailBridgeWidget';
 
 const ProductCard = ({ 
   product, 
   onPurchaseETH, 
   onPurchasePYUSD, 
-  onBridgeComplete,
+  onCrossChainPurchase,
+  contractAddress,
+  contractABI,
   userWallet,
   isWalletConnected,
   nexusReady
@@ -179,33 +182,43 @@ const ProductCard = ({
                 </div>
               </button>
 
-              {/* Avail Nexus Bridge Widget */}
+              {/* Cross-chain Purchase Widget for bridge and execute feature */}
               <div className="border-t pt-3">
-                <p className="text-sm text-gray-600 mb-3">
-                  Or bridge tokens from another chain:
+                <p className="text-sm text-gray-600 mb-3 font-semibold">
+                  🌉 Or pay with ETH from another chain:
                 </p>
+                <CrossChainPurchaseWidget 
+                  product={product}
+                  contractAddress={contractAddress}
+                  contractABI={contractABI}
+                  onPurchaseComplete={(result) => {
+                    setShowPaymentOptions(false);
+                    if (onCrossChainPurchase) {
+                      onCrossChainPurchase(product, result);
+                    }
+                  }}
+                  nexusReady={nexusReady}
+                />
+              </div>
+
+              {/* Avail Bridge Widget */}
+              {/* <div className="border-t pt-3">
                 <AvailBridgeWidget 
                   product={product}
                   onBridgeComplete={(result) => {
-                    console.log('Bridge completed:', result);
                     setShowPaymentOptions(false);
-                    if (onBridgeComplete) {
-                      onBridgeComplete(result);
-                    }
+                    // After a successful bridge, automatically trigger the ETH purchase.
+                    alert('Bridge successful! Now proceeding with the purchase on Sepolia...');
+                    onPurchaseETH(product);
                   }}
                 />
-                {!nexusReady && (
-                  <p className="text-xs text-orange-600 mt-2 text-center">
-                    ⚠️ Nexus SDK is initializing...
-                  </p>
-                )}
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* Details Modal - Same as before */}
       {showDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-screen overflow-y-auto">
@@ -251,7 +264,7 @@ const ProductCard = ({
                 {product.price} ETH
               </p>
               <p className="text-gray-600 mb-3">
-                ≈ ${(product.price * 2000).toFixed(2)} USD or pay with PYUSD
+                ≈ ${(product.price * 2000).toFixed(2)} USD or pay with PYUSD/Cross-chain
               </p>
               <button
                 onClick={handlePurchaseClick}
@@ -360,7 +373,7 @@ const ProductCard = ({
                   <div>
                     <p className="font-semibold text-gray-800">Cross-chain via Avail Nexus</p>
                     <p className="text-xs text-gray-600">
-                      Bridge from Optimism, Arbitrum, or Base Sepolia
+                      Bridge & Pay from Optimism, Arbitrum, or Base Sepolia
                     </p>
                   </div>
                 </div>

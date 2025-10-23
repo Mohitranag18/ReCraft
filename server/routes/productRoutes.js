@@ -155,7 +155,7 @@ router.get('/:id', async (req, res) => {
 // Update product after purchase (blockchain callback)
 router.patch('/:id/purchase', async (req, res) => {
   try {
-    const { buyerWallet, transactionHash, blockNumber, revenue } = req.body;
+    const { buyerWallet, transactionHash, blockNumber, revenue, paymentMethod } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -173,6 +173,7 @@ router.patch('/:id/purchase', async (req, res) => {
     product.transactionHash = transactionHash;
     product.blockNumber = blockNumber;
     product.revenue = revenue;
+    product.paymentMethod = paymentMethod; // Save the payment method
 
     await product.save();
 

@@ -180,7 +180,7 @@ const AvailBridgeWidget = ({ product, onBridgeComplete }) => {
               </button>
             </div>
 
-            {/* Product Info */}
+            {/* Product Info + Gas Fee Reminder */}
             <div className="mb-4 bg-blue-50 p-3 rounded-lg">
               <p className="text-sm text-gray-700">
                 <strong>Product:</strong> {product?.productName}
@@ -188,7 +188,14 @@ const AvailBridgeWidget = ({ product, onBridgeComplete }) => {
               <p className="text-sm text-gray-700">
                 <strong>Price:</strong> {ethAmount} ETH
               </p>
+
+              <div className="mt-3 bg-yellow-100 border border-yellow-300 text-yellow-800 text-xs p-3 rounded-md font-medium">
+                ⚠️ <strong>Note:</strong> The product value shown above doesn’t include gas fees.
+                We recommend adding a small extra amount (~0.001–0.002 ETH) to cover 
+                transaction costs if your balance on Ethereum Sepolia is currently 0.
+              </div>
             </div>
+
 
             {/* Source Chain Selection */}
             <div className="mb-4">

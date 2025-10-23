@@ -1,5 +1,5 @@
 /**
- * Marketplace Component - Integrated with Avail Nexus SDK
+ * Marketplace Component - Integrated with Avail Nexus Bridge Execute
  * File: client/src/components/Marketplace.jsx
  */
 
@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
 import ProductCard from './ProductCard';
-import AvailBridgeWidget from './AvailBridgeWidget';
 import { useNexus } from '../providers/NexusProvider';
 import { useAccount } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
@@ -83,6 +82,12 @@ const Marketplace = ({ contractAddress, contractABI }) => {
     }
 
     try {
+      // Request network switch to Sepolia if needed
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
+      });
+
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -112,6 +117,8 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       
       if (error.code === 'ACTION_REJECTED') {
         alert('Transaction was rejected by user.');
+      } else if (error.code === 4902) {
+        alert('Please add Sepolia network to your wallet first.');
       } else if (error.message.includes('insufficient funds')) {
         alert('Insufficient ETH balance for purchase and gas fees.');
       } else {
@@ -127,6 +134,12 @@ const Marketplace = ({ contractAddress, contractABI }) => {
     }
 
     try {
+      // Request network switch to Sepolia if needed
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
+      });
+
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
@@ -137,8 +150,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
         return;
       }
 
-      // PYUSD has 6 decimals (not 18 like ETH!)
-      // Convert ETH price to USD (assuming 1 ETH ≈ $2000 USD)
       const priceInUSD = product.price * 2000;
       const priceInPYUSD = ethers.parseUnits(priceInUSD.toString(), 6);
       
@@ -147,7 +158,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       console.log('Product USD price:', priceInUSD);
       console.log('PYUSD amount:', priceInPYUSD.toString());
 
-      // ERC-20 ABI for approve and balance check
       const erc20ABI = [
         'function approve(address spender, uint256 amount) public returns (bool)',
         'function allowance(address owner, address spender) public view returns (uint256)',
@@ -157,7 +167,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
 
       const pyusdContract = new ethers.Contract(pyusdAddress, erc20ABI, signer);
 
-      // Check PYUSD balance
       const balance = await pyusdContract.balanceOf(account);
       const balanceFormatted = ethers.formatUnits(balance, 6);
       console.log('Your PYUSD balance:', balanceFormatted);
@@ -167,7 +176,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
         return;
       }
 
-      // Step 1: Approve PYUSD spend
       console.log('🔐 Approving PYUSD spend...');
       const approveTx = await pyusdContract.approve(contractAddress, priceInPYUSD);
       
@@ -178,7 +186,6 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       console.log('✅ PYUSD approved');
       alert('Step 2/2: PYUSD approved! Now purchasing product...');
 
-      // Step 2: Purchase with PYUSD
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
       console.log('🛒 Executing purchase...');
       const tx = await contract.purchaseProductWithPYUSD(product.blockchainId);
@@ -198,6 +205,8 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       
       if (error.code === 'ACTION_REJECTED') {
         alert('Transaction was rejected by user.');
+      } else if (error.code === 4902) {
+        alert('Please add Sepolia network to your wallet first.');
       } else if (error.message.includes('rate limited')) {
         alert('RPC rate limit reached. Please wait a moment and try again.');
       } else if (error.message.includes('insufficient funds')) {
@@ -205,6 +214,22 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       } else {
         alert('Failed to purchase with PYUSD: ' + error.message);
       }
+    }
+  };
+
+  const handleCrossChainPurchase = async (product, bridgeResult) => {
+    console.log('🌉 Cross-chain purchase completed:', bridgeResult);
+
+    try {
+      await updateBackendAfterPurchase(product, {
+        hash: bridgeResult.executeTransactionHash || bridgeResult.transactionHash,
+        blockNumber: bridgeResult.blockNumber,
+      }, 'CROSS_CHAIN_ETH');
+
+      alert('🎉 Product purchased successfully via cross-chain bridge!');
+      fetchProducts();
+    } catch (error) {
+      console.error('❌ Error updating backend:', error);
     }
   };
 
@@ -230,14 +255,7 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       console.log('✅ Backend updated after purchase');
     } catch (error) {
       console.error('⚠️ Failed to update backend:', error);
-      // Don't fail the whole purchase if backend update fails
     }
-  };
-
-  const handleBridgeComplete = async (bridgeResult) => {
-    console.log('🌉 Bridge completed:', bridgeResult);
-    alert('✅ Bridge successful! Your funds are now available on Ethereum Sepolia. You can now make your purchase.');
-    // Optionally refresh balances or update UI
   };
 
   return (
@@ -349,7 +367,9 @@ const Marketplace = ({ contractAddress, contractABI }) => {
                   product={product}
                   onPurchaseETH={handlePurchaseWithETH}
                   onPurchasePYUSD={handlePurchaseWithPYUSD}
-                  onBridgeComplete={handleBridgeComplete}
+                  onCrossChainPurchase={handleCrossChainPurchase}
+                  contractAddress={contractAddress}
+                  contractABI={contractABI}
                   userWallet={account}
                   isWalletConnected={isConnected}
                   nexusReady={nexusReady}

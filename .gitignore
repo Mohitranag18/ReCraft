@@ -1,1 +1,3 @@
 .env
+onlyBridgeFiles/
+bridge-execute-ref-files/

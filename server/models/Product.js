@@ -91,6 +91,11 @@ const productSchema = new mongoose.Schema({
     platformShare: Number,
     total: Number
   },
+  paymentMethod: {
+    type: String,
+    enum: ['ETH', 'PYUSD', 'CROSS_CHAIN_ETH'],
+    default: 'ETH'
+  },
   views: {
     type: Number,
     default: 0
