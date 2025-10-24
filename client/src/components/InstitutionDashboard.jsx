@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
+import { switchToSepolia } from '../utils/network';
 
 const InstitutionDashboard = ({ contractAddress, contractABI }) => {
   const [donations, setDonations] = useState([]);
@@ -46,7 +47,10 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
         return;
       }
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = await switchToSepolia();
+      if (!provider) {
+        throw new Error('Failed to connect to Sepolia network.');
+      }
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
@@ -103,66 +107,78 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      Available: 'bg-green-100 text-green-800',
-      Accepted: 'bg-blue-100 text-blue-800',
-      Crafted: 'bg-purple-100 text-purple-800',
-      Sold: 'bg-gray-100 text-gray-800'
+  const getStatusPill = (status) => {
+    const baseClasses = "px-3 py-1.5 rounded-full text-xs font-semibold";
+    const statusClasses = {
+      Available: 'bg-green-900/50 text-green-300 border border-green-500/30',
+      Accepted: 'bg-blue-900/50 text-blue-300 border border-blue-500/30',
+      Crafted: 'bg-purple-900/50 text-purple-300 border border-purple-500/30',
+      Sold: 'bg-gray-700/50 text-gray-300 border border-gray-600'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return `${baseClasses} ${statusClasses[status] || statusClasses.Sold}`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Institution Dashboard</h1>
-          <p className="text-gray-600">Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Card */}
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 mb-8 shadow-lg">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center shadow-md">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-1">
+                Institution Dashboard
+              </h1>
+              <p className="text-gray-400 flex items-center gap-2 text-sm">
+                Connected: {account.slice(0, 6)}...{account.slice(-4)}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Create Donation Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Create Donation</h2>
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 mb-8 shadow-lg">
+          <h2 className="text-3xl font-bold text-white mb-6">
+            Create a New Donation
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Material Type
-                </label>
+                <label className="block text-sm font-semibold text-gray-400 mb-2">Material Type</label>
                 <select
                   value={formData.materialType}
                   onChange={(e) => setFormData({ ...formData, materialType: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
                   required
                 >
-                  <option value="paper">Paper</option>
-                  <option value="cardboard">Cardboard</option>
-                  <option value="notebooks">Notebooks</option>
-                  <option value="magazines">Magazines</option>
-                  <option value="newspapers">Newspapers</option>
-                  <option value="mixed">Mixed</option>
+                  <option className='bg-gray-900' value="paper">📄 Paper</option>
+                  <option className='bg-gray-900' value="cardboard">📦 Cardboard</option>
+                  <option className='bg-gray-900' value="notebooks">📓 Notebooks</option>
+                  <option className='bg-gray-900' value="magazines">📰 Magazines</option>
+                  <option className='bg-gray-900' value="newspapers">🗞️ Newspapers</option>
+                  <option className='bg-gray-900' value="mixed">🔀 Mixed</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
-                </label>
+                <label className="block text-sm font-semibold text-gray-400 mb-2">Quantity</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter quantity"
+                    className="flex-1 px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
+                    placeholder="e.g., 100"
                     required
                     min="1"
                   />
                   <select
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
                   >
                     <option value="sheets">Sheets</option>
                     <option value="kg">Kg</option>
@@ -172,68 +188,64 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
                 </div>
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description (Optional)
-              </label>
+              <label className="block text-sm font-semibold text-gray-400 mb-2">Description (Optional)</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
                 rows="3"
-                placeholder="Add any additional details..."
+                placeholder="Add details like quality, condition, etc."
               />
             </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-lg transition-colors disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Donation'}
+              {loading ? 'Creating Donation...' : 'Create Donation'}
             </button>
           </form>
         </div>
 
         {/* Donations List */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">My Donations</h2>
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+          <h2 className="text-3xl font-bold text-white mb-6">
+            My Donation History
+          </h2>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Material</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Quantity</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">NGO</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                <tr className="border-b border-gray-700">
+                  <th className="p-3 text-sm font-semibold text-gray-300">ID</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">Material</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">Quantity</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">Status</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">NGO</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {donations.map((donation) => (
-                  <tr key={donation._id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">#{donation.blockchainId}</td>
-                    <td className="py-3 px-4 capitalize">{donation.materialType}</td>
-                    <td className="py-3 px-4">{donation.quantity} {donation.unit}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(donation.status)}`}>
+                  <tr key={donation._id} className="border-b border-gray-800 hover:bg-gray-700/50 transition-colors">
+                    <td className="p-3 font-mono text-green-400 text-sm">#{donation.blockchainId}</td>
+                    <td className="p-3 capitalize text-gray-300 text-sm">{donation.materialType}</td>
+                    <td className="p-3 text-gray-300 text-sm">{donation.quantity} {donation.unit}</td>
+                    <td className="p-3">
+                      <span className={getStatusPill(donation.status)}>
                         {donation.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
-                      {donation.ngoId ? donation.ngoId.name : '-'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {new Date(donation.createdAt).toLocaleDateString()}
-                    </td>
+                    <td className="p-3 text-gray-300 text-sm">{donation.ngoId ? donation.ngoId.name : '-'}</td>
+                    <td className="p-3 text-sm text-gray-400">{new Date(donation.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             {donations.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No donations yet. Create your first donation above!</p>
+              <div className="text-center py-10 text-gray-500">
+                <p>No donations yet. Create your first one above!</p>
+              </div>
             )}
           </div>
         </div>

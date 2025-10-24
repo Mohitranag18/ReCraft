@@ -29,14 +29,15 @@ const productSchema = new mongoose.Schema({
     type: String,
     maxlength: 1000
   },
-  price: {
+  priceETH: {
     type: Number,
-    required: [true, 'Price is required'],
+    required: [true, 'Price in ETH is required'],
     min: 0
   },
-  currency: {
-    type: String,
-    default: 'PYUSD'
+  pricePYUSD: {
+    type: Number,
+    required: [true, 'Price in PYUSD is required'],
+    min: 0
   },
   images: [{
     type: String // URLs to product images
@@ -93,8 +94,7 @@ const productSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['ETH', 'PYUSD', 'CROSS_CHAIN_ETH'],
-    default: 'ETH'
+    enum: ['ETH', 'PYUSD', 'CROSS_CHAIN_ETH']
   },
   views: {
     type: Number,

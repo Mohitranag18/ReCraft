@@ -3,22 +3,11 @@ const BlockchainExplorerLink = ({ transactionHash, label = 'View Transaction', n
   const currentNetwork = network || import.meta.env.VITE_NETWORK || 'localhost';
   
   const getExplorerUrl = () => {
-    const blockscoutUrl = import.meta.env.VITE_BLOCKSCOUT_URL || 'http://localhost:4000';
-    const useBlockscout = import.meta.env.VITE_USE_BLOCKSCOUT === 'true';
-    
     switch (currentNetwork.toLowerCase()) {
       case 'sepolia':
-        // Use Blockscout for Sepolia if available, otherwise Etherscan
-        if (useBlockscout) {
-          return `${blockscoutUrl}/${type}/${transactionHash}`;
-        }
         return `https://sepolia.etherscan.io/tx/${transactionHash}`;
         
       case 'polygon':
-        // Blockscout for Polygon
-        if (useBlockscout) {
-          return `https://polygon.blockscout.com/${type}/${transactionHash}`;
-        }
         return `https://polygonscan.com/tx/${transactionHash}`;
         
       case 'mainnet':
@@ -38,8 +27,8 @@ const BlockchainExplorerLink = ({ transactionHash, label = 'View Transaction', n
       case 'localhost':
       case 'hardhat':
       default:
-        // Local Blockscout instance for development
-        return `${blockscoutUrl}/${type}/${transactionHash}`;
+        // Use Sepolia Etherscan as a fallback for local development
+        return `https://sepolia.etherscan.io/tx/${transactionHash}`;
     }
   };
 
@@ -48,7 +37,7 @@ const BlockchainExplorerLink = ({ transactionHash, label = 'View Transaction', n
       href={getExplorerUrl()}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition"
+      className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
     >
       <svg
         className="w-4 h-4"

@@ -28,7 +28,8 @@ router.post('/', authenticateToken, async (req, res) => {
       productName, 
       productType, 
       description, 
-      price, 
+      priceETH,
+      pricePYUSD,
       images, 
       artisanWallet, 
       artisanName,
@@ -60,7 +61,8 @@ router.post('/', authenticateToken, async (req, res) => {
       productName,
       productType,
       description,
-      price,
+      priceETH: parseFloat(priceETH),
+      pricePYUSD: parseFloat(pricePYUSD),
       images: images || [],
       ngoId: ngo._id,
       ngoWallet: ngo.walletAddress,
@@ -104,9 +106,9 @@ router.get('/marketplace', async (req, res) => {
     }
 
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      query.priceETH = {}; // Assuming filters apply to ETH price for now
+      if (minPrice) query.priceETH.$gte = Number(minPrice);
+      if (maxPrice) query.priceETH.$lte = Number(maxPrice);
     }
 
     if (search) {
@@ -155,7 +157,7 @@ router.get('/:id', async (req, res) => {
 // Update product after purchase (blockchain callback)
 router.patch('/:id/purchase', async (req, res) => {
   try {
-    const { buyerWallet, transactionHash, blockNumber, revenue, paymentMethod } = req.body;
+    const { buyerWallet, transactionHash, blockNumber, paymentMethod } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -166,13 +168,29 @@ router.patch('/:id/purchase', async (req, res) => {
       return res.status(400).json({ error: 'Product already sold' });
     }
 
+    let totalRevenueAmount;
+    if (paymentMethod === 'PYUSD') {
+      totalRevenueAmount = product.pricePYUSD;
+    } else { // ETH or CROSS_CHAIN_ETH
+      totalRevenueAmount = product.priceETH;
+    }
+
+    const ngoShare = (totalRevenueAmount * 0.7);
+    const institutionShare = (totalRevenueAmount * 0.2);
+    const platformShare = (totalRevenueAmount * 0.1);
+
     // Update product
     product.sold = true;
     product.soldAt = new Date();
     product.buyerWallet = buyerWallet.toLowerCase();
     product.transactionHash = transactionHash;
     product.blockNumber = blockNumber;
-    product.revenue = revenue;
+    product.revenue = {
+      ngoShare: ngoShare,
+      institutionShare: institutionShare,
+      platformShare: platformShare,
+      total: totalRevenueAmount
+    };
     product.paymentMethod = paymentMethod; // Save the payment method
 
     await product.save();
@@ -182,12 +200,12 @@ router.patch('/:id/purchase', async (req, res) => {
 
     // Update NGO revenue
     await NGO.findByIdAndUpdate(product.ngoId, {
-      $inc: { totalRevenue: revenue.ngoShare }
+      $inc: { totalRevenue: ngoShare }
     });
 
     // Update Institution revenue
     await Institution.findByIdAndUpdate(product.institutionId, {
-      $inc: { totalRevenue: revenue.institutionShare }
+      $inc: { totalRevenue: institutionShare }
     });
 
     res.json({

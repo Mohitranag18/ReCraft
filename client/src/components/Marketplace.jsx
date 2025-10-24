@@ -65,11 +65,11 @@ const Marketplace = ({ contractAddress, contractABI }) => {
     }
 
     if (filters.minPrice) {
-      filtered = filtered.filter(p => p.price >= parseFloat(filters.minPrice));
+      filtered = filtered.filter(p => p.priceETH >= parseFloat(filters.minPrice));
     }
 
     if (filters.maxPrice) {
-      filtered = filtered.filter(p => p.price <= parseFloat(filters.maxPrice));
+      filtered = filtered.filter(p => p.priceETH <= parseFloat(filters.maxPrice));
     }
 
     setFilteredProducts(filtered);
@@ -92,11 +92,11 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      const priceInWei = ethers.parseEther(product.price.toString());
+      const priceInWei = ethers.parseEther(product.priceETH.toString());
 
       console.log('💳 Purchasing with ETH...');
       console.log('Product:', product.productName);
-      console.log('Price:', product.price, 'ETH');
+      console.log('Price:', product.priceETH, 'ETH');
       
       const tx = await contract.purchaseProductWithETH(product.blockchainId, {
         value: priceInWei
@@ -150,12 +150,11 @@ const Marketplace = ({ contractAddress, contractABI }) => {
         return;
       }
 
-      const priceInUSD = product.price * 2000;
-      const priceInPYUSD = ethers.parseUnits(priceInUSD.toString(), 6);
+      const priceInPYUSD = ethers.parseUnits(product.pricePYUSD.toString(), 6);
       
       console.log('💵 Purchasing with PYUSD...');
-      console.log('Product ETH price:', product.price);
-      console.log('Product USD price:', priceInUSD);
+      console.log('Product ETH price:', product.priceETH);
+      console.log('Product PYUSD price:', product.pricePYUSD);
       console.log('PYUSD amount:', priceInPYUSD.toString());
 
       const erc20ABI = [
@@ -235,20 +234,18 @@ const Marketplace = ({ contractAddress, contractABI }) => {
 
   const updateBackendAfterPurchase = async (product, receipt, method) => {
     try {
-      const ngoShare = (product.price * 0.7).toFixed(4);
-      const institutionShare = (product.price * 0.2).toFixed(4);
-      const platformShare = (product.price * 0.1).toFixed(4);
+      let totalRevenueAmount;
+      if (method === 'PYUSD') {
+        totalRevenueAmount = product.pricePYUSD;
+      } else { // ETH or CROSS_CHAIN_ETH
+        totalRevenueAmount = product.priceETH;
+      }
 
+      // The backend will now calculate revenue shares based on the totalRevenueAmount
       await axios.patch(`http://localhost:5000/api/products/${product._id}/purchase`, {
         buyerWallet: account,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
-        revenue: {
-          ngoShare: parseFloat(ngoShare),
-          institutionShare: parseFloat(institutionShare),
-          platformShare: parseFloat(platformShare),
-          total: product.price
-        },
         paymentMethod: method
       });
 
@@ -259,43 +256,46 @@ const Marketplace = ({ contractAddress, contractABI }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-12">
+      <div className="bg-gray-800/50 py-16 border-b border-gray-700/50">
         <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-4xl font-bold mb-3">ReCraft Marketplace</h1>
-          <p className="text-lg opacity-90 mb-2">
-            Discover sustainable home décor crafted from recycled materials
-          </p>
-          <p className="text-sm opacity-75 mb-4">
-            💳 Pay with ETH or PYUSD  •  🌉 Cross-chain via Avail Nexus  •  🔍 Verified on Blockscout
-          </p>
-          
-          {/* Wallet Connection */}
-          <div className="flex items-center gap-4 mt-4">
-            <ConnectKitButton />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex-1">
+              <h1 className="text-5xl font-extrabold mb-3 text-white">
+                Marketplace
+              </h1>
+              <p className="text-lg text-gray-300">
+                Discover sustainable home décor crafted from recycled materials.
+              </p>
+            </div>
             
-            {isConnected && (
-              <div className="flex items-center gap-2">
-                {nexusReady ? (
-                  <span className="text-sm bg-green-500 bg-opacity-20 border border-green-300 px-3 py-1 rounded-lg flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    Nexus Ready
-                  </span>
-                ) : (
-                  <span className="text-sm bg-yellow-500 bg-opacity-20 border border-yellow-300 px-3 py-1 rounded-lg flex items-center gap-2">
-                    <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                    Initializing Nexus...
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Wallet Connection */}
+            <div className="flex flex-col items-start md:items-end gap-3">
+              <ConnectKitButton />
+              
+              {isConnected && (
+                <div className="flex items-center gap-2">
+                  {nexusReady ? (
+                    <span className="text-sm bg-green-900/50 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                      Nexus Ready
+                    </span>
+                  ) : (
+                    <span className="text-sm bg-yellow-900/50 border border-yellow-500/30 text-yellow-300 px-3 py-1.5 rounded-full flex items-center gap-2">
+                      <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                      Initializing...
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow-md sticky top-0 z-10">
+      <div className="sticky top-0 z-10 bg-gray-800/80 backdrop-blur-lg border-b border-gray-700/50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <input
@@ -303,13 +303,12 @@ const Marketplace = ({ contractAddress, contractABI }) => {
               placeholder="Search products..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
             />
-            
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
             >
               <option value="">All Types</option>
               <option value="decor">Décor</option>
@@ -321,22 +320,20 @@ const Marketplace = ({ contractAddress, contractABI }) => {
               <option value="gift-box">Gift Box</option>
               <option value="other">Other</option>
             </select>
-
             <input
               type="number"
               placeholder="Min Price (ETH)"
               value={filters.minPrice}
               onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
               step="0.001"
             />
-
             <input
               type="number"
               placeholder="Max Price (ETH)"
               value={filters.maxPrice}
               onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
               step="0.001"
             />
           </div>
@@ -346,20 +343,14 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="text-gray-600">Loading products...</p>
-            </div>
-          </div>
+          <div className="text-center py-20 text-gray-400">Loading products...</div>
         ) : (
           <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'} Available
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'} Found
               </h2>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard
@@ -376,24 +367,9 @@ const Marketplace = ({ contractAddress, contractABI }) => {
                 />
               ))}
             </div>
-
             {filteredProducts.length === 0 && (
-              <div className="text-center py-20">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                  />
-                </svg>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-                <p className="mt-2 text-gray-500">Try adjusting your filters or search terms</p>
+              <div className="text-center py-20 text-gray-500">
+                <p>No products found. Try adjusting your filters.</p>
               </div>
             )}
           </>

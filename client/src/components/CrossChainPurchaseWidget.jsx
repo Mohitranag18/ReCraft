@@ -218,39 +218,38 @@ const CrossChainPurchaseWidget = ({
 
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg p-4 border border-orange-200">
-        <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5 shadow-lg">
+        <h4 className="font-bold text-white mb-3 text-lg">
           🌉 Cross-Chain Payment with ETH
-          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-            Bridge & Pay
-          </span>
         </h4>
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-xs text-gray-400 mb-3">
           Pay with ETH from another chain. Your ETH will be bridged to Sepolia and automatically used to purchase this product.
         </p>
 
         {/* Chain Selection */}
-        <div className="space-y-2 mb-3">
-          <label className="text-sm font-semibold text-gray-700">Select Source Chain</label>
-          <div className="grid grid-cols-1 gap-2">
+        <div className="space-y-3 mb-4">
+          <label className="text-sm font-semibold text-gray-400">
+            1. Select Source Chain
+          </label>
+          <div className="grid grid-cols-1 gap-3">
             {availableChains.map((chain) => (
               <button
                 key={chain.id}
                 onClick={() => setSelectedChain(chain.id)}
                 disabled={!nexusReady}
-                className={`p-3 rounded-lg border-2 transition text-left ${
+                className={`p-3 rounded-lg border transition-all duration-300 text-left ${
                   selectedChain === chain.id
-                    ? 'border-orange-500 bg-orange-50'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-green-500 bg-green-900/30 text-green-300'
+                    : 'border-gray-700 bg-gray-900/50 text-gray-300 hover:bg-gray-700/50'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800 flex items-center gap-2">
+                  <span className="font-semibold flex items-center gap-2">
                     <span className="text-xl">{chain.icon}</span>
-                    {chain.name}
+                    <span>{chain.name}</span>
                   </span>
                   {selectedChain === chain.id && (
-                    <span className="text-orange-500">✓</span>
+                    <span className="text-green-400 text-xl">✓</span>
                   )}
                 </div>
               </button>
@@ -260,9 +259,12 @@ const CrossChainPurchaseWidget = ({
 
         {/* Amount Input */}
         {selectedChain && (
-          <div className="space-y-2 mb-3">
-            <label className="text-sm font-semibold text-gray-700">
-              Amount in ETH (Product Price: {product.price} ETH)
+          <div className="space-y-3 mb-4">
+            <label className="text-sm font-semibold text-gray-400">
+              2. Amount in ETH
+              <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full ml-2">
+                Price: {product.price} ETH
+              </span>
             </label>
             <div className="relative">
               <input
@@ -272,20 +274,20 @@ const CrossChainPurchaseWidget = ({
                 value={bridgeAmount}
                 onChange={(e) => setBridgeAmount(e.target.value)}
                 disabled={!nexusReady || isExecuting}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                className="w-full px-4 py-3 pr-16 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-800"
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500">
                 ETH
               </div>
             </div>
             {ethBalance && parseFloat(ethBalance) > 0 && (
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-500">
                 Available: {ethBalance} ETH
               </p>
             )}
             <button
               onClick={() => setBridgeAmount(product.price.toString())}
-              className="text-xs text-blue-600 hover:text-blue-700"
+              className="text-xs text-green-400 hover:text-green-300"
             >
               Use exact product price
             </button>
@@ -294,10 +296,10 @@ const CrossChainPurchaseWidget = ({
 
         {/* Simulation Loading */}
         {isSimulating && (
-          <div className="bg-blue-50 rounded-lg p-3 mb-3">
+          <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
             <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span className="text-sm text-gray-700">Simulating transaction...</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+              <span className="text-sm text-gray-300">Simulating transaction...</span>
             </div>
           </div>
         )}
@@ -306,19 +308,16 @@ const CrossChainPurchaseWidget = ({
         {simulation && !isSimulating && (
           <div className="space-y-2 mb-3">
             {simulation.error || simulation.executeSimulation?.error ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-700 font-semibold">⚠️ Simulation Failed</p>
-                <p className="text-xs text-red-600 mt-1">
+              <div className="bg-red-900/50 border border-red-500/30 rounded-lg p-3">
+                <p className="text-sm text-red-300 font-semibold">⚠️ Simulation Failed</p>
+                <p className="text-xs text-red-400 mt-1">
                   {simulation.executeSimulation?.error || simulation.error}
-                </p>
-                <p className="text-xs text-gray-600 mt-2">
-                  💡 Tip: If issues persist, try using the direct "Pay with ETH" button instead.
                 </p>
               </div>
             ) : (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-700 font-semibold mb-2">✓ Ready to Purchase</p>
-                <div className="space-y-1 text-xs text-gray-700">
+              <div className="bg-green-900/50 border border-green-500/30 rounded-lg p-3">
+                <p className="text-sm text-green-300 font-semibold mb-2">✓ Ready to Purchase</p>
+                <div className="space-y-1 text-xs text-gray-300">
                   <div className="flex justify-between">
                     <span>Product Price:</span>
                     <span className="font-medium">{product.price} ETH</span>
@@ -337,19 +336,15 @@ const CrossChainPurchaseWidget = ({
                         : '0'} ETH
                     </span>
                   </div>
-                  <div className="flex justify-between border-t pt-1 mt-1 font-semibold">
+                  <div className="flex justify-between border-t border-gray-700 pt-1 mt-1 font-semibold">
                     <span>Total Cost:</span>
-                    <span className="text-green-600">
+                    <span className="text-green-400">
                       {simulation.totalEstimatedCost?.total 
                         ? parseFloat(simulation.totalEstimatedCost.total).toFixed(6)
                         : bridgeAmount} ETH
                     </span>
                   </div>
                 </div>
-
-                <p className="text-xs text-gray-600 mt-2">
-                  💡 You need enough ETH to cover: product price + bridge fee + gas
-                </p>
               </div>
             )}
           </div>
@@ -357,8 +352,8 @@ const CrossChainPurchaseWidget = ({
 
         {/* Error Display */}
         {error && !isSimulating && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-900/50 border border-red-500/30 rounded-lg p-3 mb-3">
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
@@ -375,7 +370,7 @@ const CrossChainPurchaseWidget = ({
             isSimulating ||
             (simulation && (simulation.error || simulation.executeSimulation?.error))
           }
-          className="w-full bg-gradient-to-r from-orange-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isExecuting ? (
             <span className="flex items-center justify-center gap-2">
@@ -401,11 +396,9 @@ const CrossChainPurchaseWidget = ({
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-xs text-gray-700">
-          <strong>How it works:</strong>
-        </p>
-        <ol className="text-xs text-gray-600 mt-2 space-y-1 list-decimal list-inside">
+      <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5">
+        <p className="font-bold text-white mb-2">How it works:</p>
+        <ol className="text-xs text-gray-400 mt-2 space-y-1 list-decimal list-inside">
           <li>Select source chain (where your ETH is)</li>
           <li>Enter amount (must be ≥ product price)</li>
           <li>Click "Bridge ETH & Purchase"</li>
@@ -413,11 +406,8 @@ const CrossChainPurchaseWidget = ({
           <li>Product purchase executes with bridged ETH</li>
           <li>Done! Product is yours 🎉</li>
         </ol>
-        <p className="text-xs text-orange-600 mt-2">
+        <p className="text-xs text-red-400 mt-2">
           ⚠️ Make sure you have enough ETH for: product price + bridge fees + gas
-        </p>
-        <p className="text-xs text-blue-600 mt-2">
-          💡 Updated to use @avail-project/nexus-core@0.0.2-beta.7 pattern
         </p>
       </div>
     </div>

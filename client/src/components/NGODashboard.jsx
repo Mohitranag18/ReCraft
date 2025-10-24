@@ -176,7 +176,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
           productName: productForm.productName,
           productType: productForm.productType,
           description: productForm.description,
-          price: parseFloat(productForm.priceETH),
+          priceETH: parseFloat(productForm.priceETH),
           pricePYUSD: parseFloat(productForm.pricePYUSD),
           artisanWallet: productForm.artisanWallet || account,
           artisanName: productForm.artisanName,
@@ -209,249 +209,168 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">NGO Dashboard</h1>
-          <p className="text-gray-600">Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
-          <div className="mt-2 flex gap-2">
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Card */}
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 mb-8 shadow-lg">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center shadow-md">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-1">
+                NGO Dashboard
+              </h1>
+              <p className="text-gray-400 flex items-center gap-2 text-sm">
+                Connected: {account.slice(0, 6)}...{account.slice(-4)}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <span className="text-xs bg-gray-700/50 border border-gray-600 text-gray-300 px-3 py-1.5 rounded-full font-semibold">
               💳 PYUSD Enabled
             </span>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+            <span className="text-xs bg-gray-700/50 border border-gray-600 text-gray-300 px-3 py-1.5 rounded-full font-semibold">
               🌉 Cross-chain Ready
             </span>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-              🔍 Blockscout Verified
+            <span className="text-xs bg-gray-700/50 border border-gray-600 text-gray-300 px-3 py-1.5 rounded-full font-semibold">
+              🔍 Etherscan Verified
             </span>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="flex border-b">
-            <button
-              onClick={() => setActiveTab('available')}
-              className={`flex-1 py-4 px-6 font-semibold ${
-                activeTab === 'available'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Available Donations ({availableDonations.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('accepted')}
-              className={`flex-1 py-4 px-6 font-semibold ${
-                activeTab === 'accepted'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              My Donations ({myDonations.length})
-            </button>
-          </div>
-
-          <div className="p-6">
-            {activeTab === 'available' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableDonations.map((donation) => (
-                  <div key={donation._id} className="border rounded-lg p-4 hover:shadow-md transition">
-                    <h3 className="font-semibold text-lg text-gray-800 capitalize mb-2">
-                      {donation.materialType}
-                    </h3>
-                    <p className="text-gray-600 mb-2">
-                      Quantity: {donation.quantity} {donation.unit}
-                    </p>
-                    <p className="text-sm text-gray-500 mb-3">
-                      From: {donation.institutionId?.name || 'Unknown'}
-                    </p>
-                    {donation.description && (
-                      <p className="text-sm text-gray-600 mb-3">{donation.description}</p>
-                    )}
-                    <button
-                      onClick={() => handleAcceptDonation(donation)}
-                      disabled={loading}
-                      className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400"
-                    >
-                      Accept Donation
-                    </button>
-                  </div>
-                ))}
-                {availableDonations.length === 0 && (
-                  <p className="text-gray-500 col-span-3 text-center py-8">
-                    No available donations at the moment
-                  </p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'accepted' && (
-              <div className="space-y-4">
-                {myDonations.map((donation) => (
-                  <div key={donation._id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-800 capitalize">
-                          {donation.materialType} - {donation.quantity} {donation.unit}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          From: {donation.institutionId?.name}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Status: <span className="font-semibold">{donation.status}</span>
-                        </p>
-                      </div>
-                      {donation.status === 'Accepted' && (
-                        <button
-                          onClick={() => {
-                            setSelectedDonation(donation);
-                            setShowProductForm(true);
-                          }}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                        >
-                          Create Product
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {myDonations.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">
-                    No accepted donations yet
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="flex gap-2 mb-8 bg-gray-800/50 p-1 rounded-lg border border-gray-700/50">
+          <button
+            onClick={() => setActiveTab('available')}
+            className={`flex-1 py-2 rounded-md font-semibold text-sm transition-colors ${
+              activeTab === 'available'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-400 hover:bg-gray-700/50'
+            }`}
+          >
+            Available Donations <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">{availableDonations.length}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('accepted')}
+            className={`flex-1 py-2 rounded-md font-semibold text-sm transition-colors ${
+              activeTab === 'accepted'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-400 hover:bg-gray-700/50'
+            }`}
+          >
+            My Donations <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">{myDonations.length}</span>
+          </button>
         </div>
 
-        {/* Product Creation Modal with PYUSD Support */}
-        {showProductForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-screen overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4">Create Product</h2>
-              <form onSubmit={handleCreateProduct} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    value={productForm.productName}
-                    onChange={(e) => setProductForm({ ...productForm, productName: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Type
-                  </label>
-                  <select
-                    value={productForm.productType}
-                    onChange={(e) => setProductForm({ ...productForm, productType: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
+        {/* Tab Content */}
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+          {activeTab === 'available' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableDonations.map((donation) => (
+                <div key={donation._id} className="bg-gray-700/50 border border-gray-600 rounded-xl p-5 hover:border-green-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10">
+                  <h3 className="font-bold text-lg text-white capitalize mb-2">{donation.materialType}</h3>
+                  <p className="text-gray-400 mb-3 text-sm">Quantity: {donation.quantity} {donation.unit}</p>
+                  <p className="text-xs text-gray-500 mb-4">From: {donation.institutionId?.name || 'Unknown'}</p>
+                  <button
+                    onClick={() => handleAcceptDonation(donation)}
+                    disabled={loading}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
                   >
-                    <option value="decor">Décor</option>
-                    <option value="frame">Frame</option>
-                    <option value="lamp">Lamp</option>
-                    <option value="basket">Basket</option>
-                    <option value="coaster">Coaster</option>
-                    <option value="notebook">Notebook</option>
-                    <option value="gift-box">Gift Box</option>
-                    <option value="other">Other</option>
-                  </select>
+                    Accept Donation
+                  </button>
                 </div>
+              ))}
+              {availableDonations.length === 0 && <p className="text-gray-500 col-span-3 text-center py-8">No available donations.</p>}
+            </div>
+          )}
 
-                {/* Dual Pricing: ETH and PYUSD */}
+          {activeTab === 'accepted' && (
+            <div className="space-y-4">
+              {myDonations.map((donation) => (
+                <div key={donation._id} className="bg-gray-700/50 border border-gray-600 rounded-xl p-5 flex justify-between items-center hover:border-green-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10">
+                  <div>
+                    <h3 className="font-bold text-lg text-white capitalize">{donation.materialType} - {donation.quantity} {donation.unit}</h3>
+                    <p className="text-sm text-gray-400">From: {donation.institutionId?.name}</p>
+                    <p className="text-sm text-green-400 font-semibold">Status: {donation.status}</p>
+                  </div>
+                  {donation.status === 'Accepted' && (
+                    <button
+                      onClick={() => { setSelectedDonation(donation); setShowProductForm(true); }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+                    >
+                      Create Product
+                    </button>
+                  )}
+                </div>
+              ))}
+              {myDonations.length === 0 && <p className="text-gray-500 text-center py-8">No accepted donations yet.</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Product Creation Modal */}
+        {showProductForm && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-2xl font-bold text-white">
+                  Create Product
+                </h2>
+                <button onClick={() => setShowProductForm(false)} className="text-gray-500 hover:text-white">✕</button>
+              </div>
+              <form onSubmit={handleCreateProduct} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Product Name</label>
+                    <input type="text" value={productForm.productName} onChange={(e) => setProductForm({ ...productForm, productName: e.target.value })} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Product Type</label>
+                    <select value={productForm.productType} onChange={(e) => setProductForm({ ...productForm, productType: e.target.value })} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" required>
+                      <option className='bg-gray-900' value="decor">Décor</option>
+                      <option className='bg-gray-900' value="frame">Frame</option>
+                      <option className='bg-gray-900' value="lamp">Lamp</option>
+                      <option className='bg-gray-900' value="basket">Basket</option>
+                      <option className='bg-gray-900' value="coaster">Coaster</option>
+                      <option className='bg-gray-900' value="notebook">Notebook</option>
+                      <option className='bg-gray-900' value="gift-box">Gift Box</option>
+                      <option className='bg-gray-900' value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price in ETH
-                    </label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      value={productForm.priceETH}
-                      onChange={(e) => handleETHPriceChange(e.target.value)}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="0.01"
-                      required
-                    />
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Price in ETH</label>
+                    <input type="number" step="0.001" value={productForm.priceETH} onChange={(e) => handleETHPriceChange(e.target.value)} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price in PYUSD
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productForm.pricePYUSD}
-                      onChange={(e) => handlePYUSDPriceChange(e.target.value)}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="20.00"
-                      required
-                    />
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Price in PYUSD</label>
+                    <input type="number" step="0.01" value={productForm.pricePYUSD} onChange={(e) => handlePYUSDPriceChange(e.target.value)} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" required />
                   </div>
                 </div>
-
-                <p className="text-xs text-gray-500">
-                  💡 Prices are automatically synchronized. 1 ETH ≈ $2000 USD ≈ 2000 PYUSD
-                </p>
-
+                <p className="text-xs text-gray-500">Prices are auto-synchronized. 1 ETH ≈ 2000 PYUSD</p>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={productForm.description}
-                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                  />
+                  <label className="block text-sm font-semibold text-gray-400 mb-2">Description</label>
+                  <textarea value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" rows="3" />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Artisan Name
-                  </label>
-                  <input
-                    type="text"
-                    value={productForm.artisanName}
-                    onChange={(e) => setProductForm({ ...productForm, artisanName: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Artisan Name</label>
+                    <input type="text" value={productForm.artisanName} onChange={(e) => setProductForm({ ...productForm, artisanName: e.target.value })} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">Artisan Wallet (Optional)</label>
+                    <input type="text" value={productForm.artisanWallet} onChange={(e) => setProductForm({ ...productForm, artisanWallet: e.target.value })} className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white" placeholder="Leave blank for NGO wallet" />
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Artisan Wallet (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={productForm.artisanWallet}
-                    onChange={(e) => setProductForm({ ...productForm, artisanWallet: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Leave blank to use NGO wallet"
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
-                  >
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold text-lg disabled:opacity-50">
                     {loading ? 'Creating...' : 'Create Product'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowProductForm(false)}
-                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                  >
+                  <button type="button" onClick={() => setShowProductForm(false)} className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg font-semibold">
                     Cancel
                   </button>
                 </div>

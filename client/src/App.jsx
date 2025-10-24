@@ -5,7 +5,9 @@ import NGODashboard from './components/NGODashboard';
 import Marketplace from './components/Marketplace';
 import Login from './components/Login';
 import Register from './components/Register';
+import DonationDashboard from './components/DonationDashboard'; // NEW: Import DonationDashboard
 import { Web3Provider } from './providers/Web3Provider'; // ← NEW: Avail integration
+import ReCraftLogo from './assets/ReCraft-Logo.png';
 
 // Import contract ABI
 import contractABI from './contracts/ReCraftABI.json';
@@ -40,25 +42,29 @@ function App() {
     // ← WRAP EVERYTHING IN WEB3PROVIDER for Avail Nexus
     <Web3Provider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-900">
           {/* Navigation */}
-          <nav className="bg-white shadow-md">
-            <div className="max-w-7xl mx-auto px-6 py-4">
+          <nav className="sticky top-0 z-50 bg-gray-800/80 backdrop-blur-lg border-b border-gray-700/50">
+            <div className="max-w-7xl mx-auto px-6 py-3">
               <div className="flex justify-between items-center">
-                <Link to="/" className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">R</span>
+                <Link to="/" className="flex items-center gap-3 group">
+                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-2xl">
+                      <img className='rounded-md' src={ReCraftLogo} alt="ReCraft Logo" />
+                    </span>
                   </div>
-                  <span className="text-2xl font-bold text-gray-800">ReCraft</span>
-                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                    🌉 Avail Nexus
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-bold text-white">
+                      ReCraft
+                    </span>
+                    <span className="text-xs text-gray-400 font-medium">Sustainable • Blockchain</span>
+                  </div>
                 </Link>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
                   <Link
                     to="/marketplace"
-                    className="text-gray-700 hover:text-blue-600 font-medium transition"
+                    className="text-gray-300 hover:text-green-400 transition-colors text-sm font-semibold"
                   >
                     Marketplace
                   </Link>
@@ -67,13 +73,13 @@ function App() {
                     <>
                       <Link
                         to="/dashboard"
-                        className="text-gray-700 hover:text-blue-600 font-medium transition"
+                        className="text-gray-300 hover:text-green-400 transition-colors text-sm font-semibold"
                       >
                         Dashboard
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                       >
                         Logout
                       </button>
@@ -82,13 +88,13 @@ function App() {
                     <>
                       <Link
                         to="/login"
-                        className="text-gray-700 hover:text-blue-600 font-medium transition"
+                        className="text-gray-300 hover:text-green-400 transition-colors text-sm font-semibold"
                       >
                         Login
                       </Link>
                       <Link
                         to="/register"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                       >
                         Register
                       </Link>
@@ -150,6 +156,8 @@ function App() {
                 )
               }
             />
+            {/* NEW: Route for Donation Dashboard */}
+            <Route path="/dashboard/:id" element={<DonationDashboard />} />
           </Routes>
         </div>
       </Router>
@@ -160,29 +168,54 @@ function App() {
 // Home Page Component
 const HomePage = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-green-500 via-blue-600 to-purple-600 text-white py-20">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Transform Waste into Wonder
+      <div className="relative flex items-center justify-center h-screen overflow-hidden text-white pb-12">
+        <div className="absolute inset-0 bg-gray-900 opacity-80"></div>
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}></div>
+
+        <div className="relative max-w-5xl mx-auto px-6 text-center">
+          <div className="inline-block mb-6 bg-green-900/50 border border-green-500/30 px-4 py-2 rounded-full">
+            <span className="text-green-300 font-semibold text-sm">
+              ♻️ Sustainable • Transparent • Blockchain-Powered
+            </span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
+            <span className="text-green-400">Transform Waste</span>
+            <br />
+            <span className="text-white">into Wonder</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-4 opacity-90">
-            Connecting institutions with NGOs to create sustainable home décor from recycled materials
+          
+          <p className="text-lg md:text-xl mb-8 text-gray-300 max-w-3xl mx-auto">
+            Connecting institutions with NGOs to create sustainable home décor from recycled materials.
           </p>
-          <p className="text-lg mb-8 opacity-90">
-            🌉 Now with <strong>cross-chain payments</strong> powered by Avail Nexus!
-          </p>
-          <div className="flex gap-4 justify-center">
+          
+          <div className="flex flex-wrap gap-4 justify-center mb-10">
+            <div className="bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+              <span className="text-gray-300 font-semibold text-sm">🌉 Cross-chain</span>
+            </div>
+            <div className="bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+              <span className="text-gray-300 font-semibold text-sm">💳 PYUSD</span>
+            </div>
+            <div className="bg-gray-800/50 px-4 py-2 rounded-lg border border-gray-700">
+              <span className="text-gray-300 font-semibold text-sm">🔍 Verified</span>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/marketplace"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition"
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors"
             >
               Explore Marketplace
             </Link>
             <Link
               to="/register"
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-600 transition"
+              className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors"
             >
               Get Started
             </Link>

@@ -37,11 +37,13 @@ const institutionRoutes = require('./routes/institutionRoutes');
 const ngoRoutes = require('./routes/ngoRoutes');
 const productRoutes = require('./routes/productRoutes');
 const blockchainRoutes = require('./routes/blockchainRoutes');
+const donationRoutes = require('./routes/donationRoutes'); // NEW: Import donation routes
 
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/ngos', ngoRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/blockchain', blockchainRoutes);
+app.use('/api/donations', donationRoutes); // NEW: Use donation routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -62,6 +64,7 @@ app.get('/', (req, res) => {
       ngos: '/api/ngos',
       products: '/api/products',
       blockchain: '/api/blockchain',
+      donations: '/api/donations/:id', // NEW: Add donation endpoint
       health: '/health'
     }
   });
