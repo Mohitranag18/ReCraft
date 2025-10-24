@@ -7,6 +7,7 @@ import { useState } from 'react';
 import BlockchainExplorerLink from './BlockchainExplorerLink';
 import CrossChainPurchaseWidget from './CrossChainPurchaseWidget'; //for bridge and execute feature
 import AvailBridgeWidget from './AvailBridgeWidget';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 
 const ProductCard = ({ 
   product, 
@@ -27,6 +28,7 @@ const ProductCard = ({
       alert('Please connect your wallet first!');
       return;
     }
+    setShowDetails(false);
     setShowPaymentOptions(true);
   };
   console.log("Rendering ProductCard for:", product);
@@ -159,12 +161,11 @@ const ProductCard = ({
             </div>
             {product.donationId && (
               <div className="mt-2">
-                <a
-                  href={`http://localhost:5173/dashboard/${product.donationId._id}`}
-                  className="text-green-400 hover:underline"
-                >
+                <Link 
+                to={`http://localhost:5173/dashboard/${product.donationId._id}`} 
+                className="text-green-400 hover:underline">
                   View Donation Details →
-                </a>
+                </Link>
               </div>
             )}
           </div>

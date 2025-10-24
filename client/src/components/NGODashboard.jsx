@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+
 
 const NGODashboard = ({ contractAddress, contractABI }) => {
   const [availableDonations, setAvailableDonations] = useState([]);
@@ -295,6 +297,14 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
                     <h3 className="font-bold text-lg text-white capitalize">{donation.materialType} - {donation.quantity} {donation.unit}</h3>
                     <p className="text-sm text-gray-400">From: {donation.institutionId?.name}</p>
                     <p className="text-sm text-green-400 font-semibold">Status: {donation.status}</p>
+                    <p className="text-sm mt-1 text-yellow-400 font-semibold">
+                      <Link
+                        to={`/dashboard/${donation._id}`}
+                        className="hover:underline"
+                      >
+                        Trace Donation
+                      </Link>
+                    </p>
                   </div>
                   {donation.status === 'Accepted' && (
                     <button

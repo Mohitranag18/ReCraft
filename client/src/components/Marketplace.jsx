@@ -310,15 +310,15 @@ const Marketplace = ({ contractAddress, contractABI }) => {
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
               className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
             >
-              <option value="">All Types</option>
-              <option value="decor">Décor</option>
-              <option value="frame">Frame</option>
-              <option value="lamp">Lamp</option>
-              <option value="basket">Basket</option>
-              <option value="coaster">Coaster</option>
-              <option value="notebook">Notebook</option>
-              <option value="gift-box">Gift Box</option>
-              <option value="other">Other</option>
+              <option className='bg-gray-900' value="">All Types</option>
+              <option className='bg-gray-900' value="decor">Décor</option>
+              <option className='bg-gray-900' value="frame">Frame</option>
+              <option className='bg-gray-900' value="lamp">Lamp</option>
+              <option className='bg-gray-900' value="basket">Basket</option>
+              <option className='bg-gray-900' value="coaster">Coaster</option>
+              <option className='bg-gray-900' value="notebook">Notebook</option>
+              <option className='bg-gray-900' value="gift-box">Gift Box</option>
+              <option className='bg-gray-900' value="other">Other</option>
             </select>
             <input
               type="number"

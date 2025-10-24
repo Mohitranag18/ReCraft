@@ -160,11 +160,11 @@ const Register = ({ setIsAuthenticated, setUserRole }) => {
                     className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
                     required
                   >
-                    <option value="school">School</option>
-                    <option value="college">College</option>
-                    <option value="university">University</option>
-                    <option value="office">Office</option>
-                    <option value="other">Other</option>
+                    <option className='bg-gray-900' value="school">School</option>
+                    <option className='bg-gray-900' value="college">College</option>
+                    <option className='bg-gray-900' value="university">University</option>
+                    <option className='bg-gray-900' value="office">Office</option>
+                    <option className='bg-gray-900' value="other">Other</option>
                   </select>
                 </div>
               ) : (

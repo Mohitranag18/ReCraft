@@ -69,7 +69,7 @@ const CrossChainPurchaseWidget = ({
   const buildPurchaseParams = useCallback(() => {
     if (!address || !product) return null;
 
-    const priceInEth = product.price.toString();              // e.g. "0.004"
+    const priceInEth = product.priceETH.toString();              // e.g. "0.004"
     const wei = parseEther(priceInEth);                       // bigint
     const valueHex = `0x${wei.toString(16)}`;                 // hex for RPC
 
@@ -113,7 +113,7 @@ const CrossChainPurchaseWidget = ({
 
       // Validate amounts
       const bridgeAmountNum = parseFloat(bridgeAmount);
-      const productPrice = parseFloat(product.price);
+      const productPrice = parseFloat(product.priceETH);
       
       if (bridgeAmountNum < productPrice) {
         throw new Error(`Bridge amount (${bridgeAmount} ETH) must be at least ${product.price} ETH`);
@@ -146,7 +146,7 @@ const CrossChainPurchaseWidget = ({
     } finally {
       setIsSimulating(false);
     }
-  }, [nexusSdk, selectedChain, bridgeAmount, buildPurchaseParams, product.price]);
+  }, [nexusSdk, selectedChain, bridgeAmount, buildPurchaseParams, product.priceETH]);
 
   // Execute cross-chain purchase
   const executeCrossChainPurchase = useCallback(async () => {
@@ -211,8 +211,8 @@ const CrossChainPurchaseWidget = ({
 
   // Auto-fill product price
   useEffect(() => {
-    if (product && product.price) {
-      setBridgeAmount(product.price.toString());
+    if (product && product.priceETH) {
+      setBridgeAmount(product.priceETH.toString());
     }
   }, [product]);
 
@@ -263,7 +263,7 @@ const CrossChainPurchaseWidget = ({
             <label className="text-sm font-semibold text-gray-400">
               2. Amount in ETH
               <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full ml-2">
-                Price: {product.price} ETH
+                Price: {product.priceETH} ETH
               </span>
             </label>
             <div className="relative">
@@ -286,7 +286,7 @@ const CrossChainPurchaseWidget = ({
               </p>
             )}
             <button
-              onClick={() => setBridgeAmount(product.price.toString())}
+              onClick={() => setBridgeAmount(product.priceETH.toString())}
               className="text-xs text-green-400 hover:text-green-300"
             >
               Use exact product price
@@ -320,7 +320,7 @@ const CrossChainPurchaseWidget = ({
                 <div className="space-y-1 text-xs text-gray-300">
                   <div className="flex justify-between">
                     <span>Product Price:</span>
-                    <span className="font-medium">{product.price} ETH</span>
+                    <span className="font-medium">{product.priceETH} ETH</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Bridge Fee:</span>
@@ -365,7 +365,7 @@ const CrossChainPurchaseWidget = ({
             !selectedChain ||
             !bridgeAmount ||
             parseFloat(bridgeAmount) <= 0 ||
-            parseFloat(bridgeAmount) < product.price ||
+            parseFloat(bridgeAmount) < product.priceETH ||
             isExecuting ||
             isSimulating ||
             (simulation && (simulation.error || simulation.executeSimulation?.error))
@@ -383,8 +383,8 @@ const CrossChainPurchaseWidget = ({
             'Select Source Chain'
           ) : !bridgeAmount || parseFloat(bridgeAmount) <= 0 ? (
             'Enter Amount'
-          ) : parseFloat(bridgeAmount) < product.price ? (
-            `Min. ${product.price} ETH Required`
+          ) : parseFloat(bridgeAmount) < product.priceETH ? (
+            `Min. ${product.priceETH} ETH Required`
           ) : (
             '🌉 Bridge ETH & Purchase'
           )}

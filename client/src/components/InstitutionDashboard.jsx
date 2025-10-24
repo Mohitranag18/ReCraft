@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
 import { switchToSepolia } from '../utils/network';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 
 const InstitutionDashboard = ({ contractAddress, contractABI }) => {
   const [donations, setDonations] = useState([]);
@@ -118,6 +119,8 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
     return `${baseClasses} ${statusClasses[status] || statusClasses.Sold}`;
   };
 
+  console.log('Donations:', donations);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -180,10 +183,10 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     className="px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white"
                   >
-                    <option value="sheets">Sheets</option>
-                    <option value="kg">Kg</option>
-                    <option value="units">Units</option>
-                    <option value="boxes">Boxes</option>
+                    <option className='bg-gray-900' value="sheets">Sheets</option>
+                    <option className='bg-gray-900' value="kg">Kg</option>
+                    <option className='bg-gray-900' value="units">Units</option>
+                    <option className='bg-gray-900' value="boxes">Boxes</option>
                   </select>
                 </div>
               </div>
@@ -223,6 +226,7 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
                   <th className="p-3 text-sm font-semibold text-gray-300">Status</th>
                   <th className="p-3 text-sm font-semibold text-gray-300">NGO</th>
                   <th className="p-3 text-sm font-semibold text-gray-300">Date</th>
+                  <th className="p-3 text-sm font-semibold text-gray-300">Trace</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,6 +242,14 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
                     </td>
                     <td className="p-3 text-gray-300 text-sm">{donation.ngoId ? donation.ngoId.name : '-'}</td>
                     <td className="p-3 text-sm text-gray-400">{new Date(donation.createdAt).toLocaleDateString()}</td>
+                    <td className="p-3 text-sm text-green-400">
+                      <Link
+                        to={`/dashboard/${donation._id}`}
+                        className="hover:underline"
+                      >
+                        Link
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
