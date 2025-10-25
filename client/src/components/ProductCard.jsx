@@ -31,16 +31,38 @@ const ProductCard = ({
     setShowDetails(false);
     setShowPaymentOptions(true);
   };
-  console.log("Rendering ProductCard for:", product);
+  // console.log("Rendering ProductCard for:", product);
 
   return (
     <>
       <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl overflow-hidden transition-all duration-300 hover:border-green-500/50 hover:shadow-2xl hover:shadow-green-500/10">
-        {/* Product Image Placeholder */}
-        <div className="h-48 bg-gray-700 flex items-center justify-center">
-          <svg className="w-20 h-20 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+        {/* Enhanced Product Image Placeholder */}
+        <div className="relative h-48 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 flex flex-col items-center justify-center overflow-hidden">
+          {/* Decorative background pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'linear-gradient(rgba(34, 197, 94, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.3) 1px, transparent 1px)',
+              backgroundSize: '20px 20px'
+            }}></div>
+          </div>
+          
+          {/* Product Icon */}
+          <div className="relative z-10 mb-3">
+            <svg className="w-16 h-16 text-green-400/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          
+          {/* Product Type Badge */}
+          <div className="relative z-10">
+            <span className="inline-block px-4 py-1.5 bg-gray-900/80 backdrop-blur-sm border border-gray-600 rounded-full text-sm font-semibold text-gray-200 capitalize">
+              {product.productType || 'Handcraft'}
+            </span>
+          </div>
+          
+          {/* Decorative corner accent */}
+          <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-bl-full"></div>
+          <div className="absolute bottom-0 left-0 w-16 h-16 bg-green-500/5 rounded-tr-full"></div>
         </div>
 
         {/* Product Info */}
@@ -122,9 +144,36 @@ const ProductCard = ({
               <h2 className="text-2xl font-bold text-white">{product.productName}</h2>
               <button onClick={() => setShowDetails(false)} className="text-gray-500 hover:text-white">✕</button>
             </div>
-            <div className="h-56 bg-gray-700 rounded-lg flex items-center justify-center mb-6">
-              <svg className="w-24 h-24 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+            
+            {/* Enhanced Details Modal Image */}
+            <div className="relative h-56 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-lg flex flex-col items-center justify-center mb-6 overflow-hidden">
+              {/* Decorative background pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'linear-gradient(rgba(34, 197, 94, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.3) 1px, transparent 1px)',
+                  backgroundSize: '30px 30px'
+                }}></div>
+              </div>
+              
+              {/* Product Icon */}
+              <div className="relative z-10 mb-4">
+                <svg className="w-24 h-24 text-green-400/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              
+              {/* Product Type Badge */}
+              <div className="relative z-10">
+                <span className="inline-block px-5 py-2 bg-gray-900/80 backdrop-blur-sm border border-gray-600 rounded-full text-base font-semibold text-gray-200 capitalize">
+                  {product.productType || 'Handcraft'}
+                </span>
+              </div>
+              
+              {/* Decorative corner accents */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-bl-full"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-500/5 rounded-tr-full"></div>
             </div>
+            
             <div className="bg-gray-900/50 rounded-lg p-4 mb-6">
               <p className="text-3xl font-bold text-green-400 mb-2">{product.priceETH} ETH</p>
               <p className="text-gray-400 mb-3">≈ ${product.pricePYUSD.toFixed(2)} PYUSD</p>
@@ -151,24 +200,24 @@ const ProductCard = ({
               </div>
             </div>
             <div className="space-y-2 text-sm">
-            <div>
-              <span className="font-semibold text-gray-300">Product ID:</span>
-              <span className="ml-2 text-gray-400">#{product.blockchainId}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-gray-300">Donation ID:</span>
-              <span className="ml-2 text-gray-400">#{product.donationBlockchainId}</span>
-            </div>
-            {product.donationId && (
-              <div className="mt-2">
-                <Link 
-                to={`http://localhost:5173/dashboard/${product.donationId._id}`} 
-                className="text-green-400 hover:underline">
-                  View Donation Details →
-                </Link>
+              <div>
+                <span className="font-semibold text-gray-300">Product ID:</span>
+                <span className="ml-2 text-gray-400">#{product.blockchainId}</span>
               </div>
-            )}
-          </div>
+              <div>
+                <span className="font-semibold text-gray-300">Donation ID:</span>
+                <span className="ml-2 text-gray-400">#{product.donationBlockchainId}</span>
+              </div>
+              {product.donationId && (
+                <div className="mt-2">
+                  <Link 
+                  to={`/dashboard/${product.donationId._id}`} 
+                  className="text-green-400 hover:underline">
+                    View Donation Details →
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

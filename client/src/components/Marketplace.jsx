@@ -260,41 +260,65 @@ const Marketplace = ({ contractAddress, contractABI }) => {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-gray-800/50 py-16 border-b border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex-1">
-              <h1 className="text-5xl font-extrabold mb-3 text-white">
-                Marketplace
-              </h1>
-              <p className="text-lg text-gray-300">
-                Discover sustainable home décor crafted from recycled materials.
-              </p>
-            </div>
-            
-            {/* Wallet Connection */}
-            <div className="flex flex-col items-start md:items-end gap-3">
-              <ConnectKitButton />
-              
-              {isConnected && (
-                <div className="flex items-center gap-2">
-                  {nexusReady ? (
-                    <span className="text-sm bg-green-900/50 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                      Nexus Ready
-                    </span>
-                  ) : (
-                    <span className="text-sm bg-yellow-900/50 border border-yellow-500/30 text-yellow-300 px-3 py-1.5 rounded-full flex items-center gap-2">
-                      <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                      Initializing...
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="bg-gray-800/50 py-12 border-b border-gray-700/50 relative overflow-hidden">
+  {/* Decorative background pattern */}
+  <div className="absolute inset-0 opacity-5">
+    <div className="absolute inset-0" style={{
+      backgroundImage: 'linear-gradient(rgba(34, 197, 94, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.3) 1px, transparent 1px)',
+      backgroundSize: '40px 40px'
+    }}></div>
+  </div>
+
+  {/* Decorative gradient blobs */}
+  <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl"></div>
+  <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl"></div>
+
+  <div className="max-w-7xl mx-auto px-6 relative z-10">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+      <div className="flex-1">
+        <div className="inline-block mb-3 bg-green-900/30 border border-green-500/30 px-3 py-1 rounded-full">
+          <span className="text-green-300 font-semibold text-xs flex items-center gap-2">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Verified & Traceable
+          </span>
         </div>
+        
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-3 text-white">
+          Marketplace
+        </h1>
+        <p className="text-base md:text-lg text-gray-300 max-w-2xl">
+          Discover sustainable home décor crafted from recycled materials. Every purchase supports artisans and the environment.
+        </p>
       </div>
+      
+      {/* Wallet Connection */}
+      <div className="flex flex-col items-start md:items-end gap-3 min-w-fit">
+        <ConnectKitButton />
+        
+        {isConnected && (
+          <div className="flex items-center gap-2">
+            {nexusReady ? (
+              <div className="flex items-center gap-2 bg-green-900/30 border border-green-500/40 px-4 py-2 rounded-lg backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span className="text-sm font-semibold text-green-300">Cross-chain Ready</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-yellow-900/30 border border-yellow-500/40 px-4 py-2 rounded-lg backdrop-blur-sm">
+                <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                <span className="text-sm font-semibold text-yellow-300">Initializing Nexus...</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* Filters */}
       <div className="sticky top-0 z-10 bg-gray-800/80 backdrop-blur-lg border-b border-gray-700/50">
