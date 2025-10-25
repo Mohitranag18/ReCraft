@@ -12,6 +12,8 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,8 +22,8 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
 
     try {
       const endpoint = userType === 'institution' 
-        ? 'http://localhost:5000/api/institutions/login'
-        : 'http://localhost:5000/api/ngos/login';
+        ? `${VITE_API_URL}/api/institutions/login`
+        : `${VITE_API_URL}/api/ngos/login`;
 
       const response = await axios.post(endpoint, formData);
 

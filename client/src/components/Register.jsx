@@ -20,6 +20,7 @@ const Register = ({ setIsAuthenticated, setUserRole }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const connectWallet = async () => {
     if (!window.ethereum) {
@@ -48,8 +49,9 @@ const Register = ({ setIsAuthenticated, setUserRole }) => {
       }
 
       const endpoint = userType === 'institution' 
-        ? 'http://localhost:5000/api/institutions/register'
-        : 'http://localhost:5000/api/ngos/register';
+        ? `${VITE_API_URL}/api/institutions/register`
+        : `${VITE_API_URL}/api/ngos/register`;
+      
 
       const payload = {
         name: formData.name,

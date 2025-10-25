@@ -15,6 +15,8 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
   });
   const [account, setAccount] = useState('');
   const [token, setToken] = useState('');
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -29,7 +31,7 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
 
   const fetchDonations = async (authToken) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/institutions/donations', {
+      const response = await axios.get(`${VITE_API_URL}/api/institutions/donations`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
       setDonations(response.data);
@@ -82,7 +84,7 @@ const InstitutionDashboard = ({ contractAddress, contractABI }) => {
 
       // Save to backend
       await axios.post(
-        'http://localhost:5000/api/institutions/donations',
+        `${VITE_API_URL}/api/institutions/donations`,
         {
           blockchainId: donationId,
           materialType: formData.materialType,

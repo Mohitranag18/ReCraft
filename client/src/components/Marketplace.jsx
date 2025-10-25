@@ -21,6 +21,8 @@ const Marketplace = ({ contractAddress, contractABI }) => {
     minPrice: '',
     maxPrice: ''
   });
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
   // Wagmi hooks for wallet connection
   const { address: account, isConnected } = useAccount();
@@ -39,7 +41,7 @@ const Marketplace = ({ contractAddress, contractABI }) => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/products/marketplace');
+      const response = await axios.get(`${VITE_API_URL}/api/products/marketplace`);
       setProducts(response.data);
       setFilteredProducts(response.data);
     } catch (error) {
@@ -242,7 +244,7 @@ const Marketplace = ({ contractAddress, contractABI }) => {
       }
 
       // The backend will now calculate revenue shares based on the totalRevenueAmount
-      await axios.patch(`http://localhost:5000/api/products/${product._id}/purchase`, {
+      await axios.patch(`${VITE_API_URL}/api/products/${product._id}/purchase`, {
         buyerWallet: account,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,

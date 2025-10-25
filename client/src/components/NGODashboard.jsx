@@ -22,6 +22,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
     artisanName: '',
     artisanWallet: ''
   });
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -37,7 +38,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
 
   const fetchAvailableDonations = async (authToken) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/ngos/donations/available', {
+      const response = await axios.get(`${VITE_API_URL}/api/ngos/donations/available`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
       setAvailableDonations(response.data);
@@ -48,7 +49,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
 
   const fetchMyDonations = async (authToken) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/ngos/donations', {
+      const response = await axios.get(`${VITE_API_URL}/api/ngos/donations`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
       setMyDonations(response.data);
@@ -75,7 +76,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
       console.log('Transaction confirmed:', receipt);
 
       await axios.patch(
-        `http://localhost:5000/api/ngos/donations/${donation._id}/accept`,
+        `${VITE_API_URL}/api/ngos/donations/${donation._id}/accept`,
         {
           transactionHash: receipt.hash,
           blockNumber: receipt.blockNumber
@@ -170,7 +171,7 @@ const NGODashboard = ({ contractAddress, contractABI }) => {
 
       // Save to backend
       await axios.post(
-        'http://localhost:5000/api/products',
+        `${VITE_API_URL}/api/products`,
         {
           blockchainId: productId,
           donationId: selectedDonation._id,

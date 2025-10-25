@@ -8,12 +8,14 @@ const DonationDashboard = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
   useEffect(() => {
     const fetchDonationData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/donations/${id}`);
+        const response = await axios.get(`${VITE_API_URL}/api/donations/${id}`);
         setDonation(response.data.donation);
         setProduct(response.data.product);
       } catch (err) {
